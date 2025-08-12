@@ -19,7 +19,7 @@ type Task struct {
 }
 
 
-func (p *Pipeline) Initialize(filepath string) error {
+func Initialize(filepath string) (*Pipeline, error) {
   data, err := os.ReadFile(filepath)
   if err != nil {
     return fmt.Errorf("Error reading filepath: %w", err)

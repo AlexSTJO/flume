@@ -10,7 +10,7 @@ import (
 func main(){
   shell := services.ShellService{}
   var p structures.Pipeline
-  err := p.Initialize("sample.yaml")
+  p, err := Initialize("sample.yaml")
   if err != nil {
     fmt.Println(err)
   } 

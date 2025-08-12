@@ -3,19 +3,17 @@ package main
 import (
   "fmt"
 
-  "github.com/AlexSTJO/flume/internal/reader"
+  "github.com/AlexSTJO/flume/internal/structures"
+  "github.com/AlexSTJO/flume/internal/services"
 )
 
 func main(){
-  p, err := reader.Reader("sample.yaml")
+  shell := services.ShellService{}
+  var p structures.Pipeline
+  err := p.Initialize("sample.yaml")
   if err != nil {
     fmt.Println(err)
-  } else {
-    fmt.Println(p)
-  }
+  } 
   
-  err = reader.ValidateTasks(p.Tasks)
-  if err != nil {
-    fmt.Printf("Error validating task: \n - %v \n", err)
-  }
+  shell.Run(p.Tasks["build"]) 
 }

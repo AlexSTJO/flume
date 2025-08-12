@@ -1,10 +1,8 @@
-package reader
+package structures
 
 import (
   "fmt" 
-  "os"
-
-  "github.com/AlexSTJO/flume/internal/services"
+  "os" 
   "gopkg.in/yaml.v3"
 )
 
@@ -16,31 +14,33 @@ type Pipeline struct {
 type Task struct {
   Version int `yaml:"version"`
   Service string `yaml:"service"`
-  Dependents []string `yaml:"dependents"`
+  Dependencies []string `yaml:"dependencies"`
   Parameters map[string]string `yaml:"parameters"`
 }
 
 
-
-func Reader(filepath string) (Pipeline, error){
+func (p *Pipeline) Initialize(filepath string) error {
   data, err := os.ReadFile(filepath)
   if err != nil {
-    return Pipeline{} ,fmt.Errorf("Error Reading: %w", err)
+    return fmt.Errorf("Error reading filepath: %w", err)
   }
 
-  var p Pipeline
-  err = yaml.Unmarshal(data, &p)
-  if err != nil{
-    return Pipeline{} ,fmt.Errorf("Error Unmarshalling: %w", err)
+  err = yaml.Unmarshal(data, p)
+  if err != nil {
+    fmt.Errorf("Error unmarshalling yaml file: %w", err)
   }
 
-  return p, nil
+  err = validateTasks(p.Tasks)
+  if err != nil {
+    return fmt.Errorf("Error validating tasks: %w", err)
+  }
 
+  return nil
 }
 
-func ValidateTasks(t map[string]Task) error{
+func validateTasks(t map[string]Task) error{
   for _, task := range(t) {
-    s ,ok := services.Registry[task.Service] 
+    s ,ok := Registry[task.Service] 
     if !ok {
       return fmt.Errorf("Invalid Service Name: %s", task.Service)
     } 
@@ -59,3 +59,6 @@ func ValidateTasks(t map[string]Task) error{
 
   return nil
 }
+
+
+

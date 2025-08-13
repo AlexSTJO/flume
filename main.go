@@ -1,32 +1,21 @@
 package main
 
 import (
-  "fmt"
+	"fmt"
 
-  "github.com/AlexSTJO/flume/internal/structures"
-  "github.com/AlexSTJO/flume/internal/services"
+	"github.com/AlexSTJO/flume/internal/logging"
 )
 
 func main(){
-  shell := services.ShellService{}
-  p, err := structures.Initialize("sample.yaml")
-  if err != nil {
-    fmt.Println(err)
-    return
-  } 
-  shell.Name() 
-
-  g, err := structures.Build(p)
-  if err != nil {
-    fmt.Println(err)
-    return
+  c := logging.Config{
+    NoColor: false,
+    Json: true,
+    RunID: "",
+    Flume: "",
   }
 
-  levels, err := g.Levels()
-  if err != nil {
-    fmt.Println(err)
-    return
-  }
+  c.ErrorLogger(fmt.Errorf("Balerina cappucina"))
+  c.InfoLogger("Hello")
+  c.SuccessLogger("Bye")
 
-  fmt.Println(levels)
 }

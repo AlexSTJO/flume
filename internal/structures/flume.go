@@ -20,22 +20,23 @@ type Task struct {
 
 
 func Initialize(filepath string) (*Pipeline, error) {
+  var p Pipeline
   data, err := os.ReadFile(filepath)
   if err != nil {
-    return fmt.Errorf("Error reading filepath: %w", err)
+    return nil, fmt.Errorf("Error reading filepath: %w", err)
   }
 
-  err = yaml.Unmarshal(data, p)
+  err = yaml.Unmarshal(data, &p)
   if err != nil {
-    fmt.Errorf("Error unmarshalling yaml file: %w", err)
+    return nil, fmt.Errorf("Error unmarshalling yaml file: %w", err)
   }
 
   err = validateTasks(p.Tasks)
   if err != nil {
-    return fmt.Errorf("Error validating tasks: %w", err)
+    return nil, fmt.Errorf("Error validating tasks: %w", err)
   }
 
-  return nil
+  return &p, nil
 }
 
 func validateTasks(t map[string]Task) error{

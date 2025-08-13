@@ -1,5 +1,10 @@
 package structures
 
+
+import (
+  "fmt"
+)
+
 type Graph struct {
   Nodes map[string]Task
   Adj map[string][]string
@@ -7,7 +12,7 @@ type Graph struct {
 } 
 
 
-func Build(p *Pipeline) (*Dag, error) {
+func Build(p *Pipeline) (*Graph, error) {
   if p == nil || len(p.Tasks) == 0 {
     return nil, fmt.Errorf("Cannot build empty pipeline")
   }
@@ -23,24 +28,68 @@ func Build(p *Pipeline) (*Dag, error) {
     g.InDeg[name] = 0
     
     seen := make(map[string]struct{}, len(p.Tasks))
-    for _, dependency := range(t["Dependencies"]) {
+    for _, dependency := range(t.Dependencies) {
       if dependency == name {
         return nil, fmt.Errorf("Task can't depend on itself")
       }
-      _, ok := g[dependency]
+      _, ok := g.Nodes[dependency]
       if !ok {
         return nil, fmt.Errorf("Dependency is not an existing task")
       } 
 
-      if _, dup := seen[dup]; dup{
+      if _, dup := seen[dependency]; dup{
         continue
       }
       seen[dependency] = struct{}{}
       g.InDeg[name]++
-      g.Adj[dependency] = append(g.adj[dependency], name)
+      g.Adj[dependency] = append(g.Adj[dependency], name)
     }
   }
 
   return g, nil
 
+}
+
+
+func (g *Graph) Levels() ([][]string, error) {
+  if g == nil {
+    return nil, fmt.Errorf("Graph is empty")
+  }
+
+  in := make(map[string]int, len(g.Nodes))
+  for n,v := range(g.InDeg) {
+    in[n] = v
+  }
+
+
+  levels := make([][]string, len(g.Nodes))
+  curr := make([]string, len(g.Nodes))
+
+  for n,v := range(in) {
+      if v == 0 {
+        curr = append(curr, n)
+      }
+  }
+
+
+  for len(curr) > 0 {
+    levels = append(levels, curr)
+    next := []string{}
+
+    for _, n := range(curr) {
+      if len(g.Adj[n]) == 0 {
+        continue
+      }
+      
+      for _, a := range(g.Adj[n]) {
+        g.InDeg[a]--
+        if (g.InDeg[a] == 0) {
+          next = append(next, a)
+        }
+    } 
+    }
+    curr=next
+  }
+
+  return levels, nil
 }

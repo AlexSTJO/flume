@@ -3,19 +3,30 @@ package main
 import (
 	"fmt"
 
-	"github.com/AlexSTJO/flume/internal/logging"
+  "github.com/AlexSTJO/flume/internal/engine"
+  "github.com/AlexSTJO/flume/internal/logging"
+  "github.com/AlexSTJO/flume/internal/services"
 )
 
 func main(){
-  c := logging.Config{
-    NoColor: false,
-    Json: true,
-    RunID: "",
-    Flume: "",
+  var shell services.ShellService
+  _ = shell.Name()
+  e, err := engine.Build("sample")
+  if err != nil {
+    fmt.Printf("An error occurred: %v", err)
   }
 
-  c.ErrorLogger(fmt.Errorf("Balerina cappucina"))
-  c.InfoLogger("Hello")
-  c.SuccessLogger("Bye")
 
+  logger := logging.Config{
+    NoColor: false,
+    LogPath: e.LogPath,
+  }
+
+  err = e.Start()
+  if err != nil {
+    logger.ErrorLogger(err)
+  }
+  
+
+  
 }

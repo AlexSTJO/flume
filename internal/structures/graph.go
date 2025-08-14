@@ -3,6 +3,7 @@ package structures
 
 import (
   "fmt"
+  "strings"
 )
 
 type Graph struct {
@@ -12,7 +13,7 @@ type Graph struct {
 } 
 
 
-func Build(p *Pipeline) (*Graph, error) {
+func BuildGraph(p *Pipeline) (*Graph, error) {
   if p == nil || len(p.Tasks) == 0 {
     return nil, fmt.Errorf("Cannot build empty pipeline")
   }
@@ -24,6 +25,7 @@ func Build(p *Pipeline) (*Graph, error) {
   }
 
   for name,t := range(p.Tasks) {
+
     g.Nodes[name] = t 
     g.InDeg[name] = 0
     
@@ -63,11 +65,11 @@ func (g *Graph) Levels() ([][]string, error) {
 
 
   levels := make([][]string, len(g.Nodes))
-  curr := make([]string, len(g.Nodes))
+  curr := make([]string, 0, len(g.Nodes))
 
   for n,v := range(in) {
       if v == 0 {
-        curr = append(curr, n)
+        curr = append(curr, strings.TrimSpace(n))
       }
   }
 

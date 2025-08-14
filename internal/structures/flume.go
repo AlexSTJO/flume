@@ -9,6 +9,7 @@ import (
 
 type Pipeline struct { 
   Tasks map[string]Task `yaml:"tasks"`
+  LogPath string `yaml:"log_path"`
 }
 
 type Task struct {

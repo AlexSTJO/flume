@@ -11,9 +11,7 @@ import (
 
 type Config struct {
   NoColor bool
-  Json bool
-  RunID string
-  Flume string
+  LogPath string
 }
 
 type LogLine struct {
@@ -39,8 +37,8 @@ func (c *Config) ErrorLogger(e error) {
     red.Printf(timeStamp().Format(time.TimeOnly) + "  ERROR    " + " %v\n", e)
   }
 
-  if c.Json {
-    f, err := os.OpenFile("logs.json", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+  if c.LogPath != "" {
+    f, err := os.OpenFile(c.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
     if err != nil {
       panic(err)
     }
@@ -62,8 +60,8 @@ func (c *Config) ErrorLogger(e error) {
 func (c *Config) InfoLogger(s string) {
   fmt.Printf(timeStamp().Format(time.TimeOnly) + "  INFO     " + " %v\n", s)
 
-  if c.Json {
-    f, err := os.OpenFile("logs.json", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+  if c.LogPath != ""{
+    f, err := os.OpenFile(c.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
     if err != nil {
       panic(err)
     }
@@ -89,8 +87,8 @@ func (c *Config) SuccessLogger(s string) {
   }
 
 
-  if c.Json {
-    f, err := os.OpenFile("logs.json", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+  if c.LogPath != "" {
+    f, err := os.OpenFile(c.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
     if err != nil {
       panic(err)
     }

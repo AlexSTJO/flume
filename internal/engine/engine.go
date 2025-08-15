@@ -2,6 +2,7 @@ package engine
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/AlexSTJO/flume/internal/logging"
@@ -81,35 +82,53 @@ func (e *Engine) Start() error {
     if len(l) == 0 {
       continue
     }
-    for _, n := range(l) {
-      logger.InfoLogger(fmt.Sprintf("Running Node: %s", n))  
-      t, ok := g.Nodes[n]
-      if !ok {
-        logger.ErrorLogger(fmt.Errorf("Weird Task Reference Error"))
-      }
-      
-      svc, ok := structures.Registry[t.Service]
-      if !ok {
-        logger.ErrorLogger(fmt.Errorf("Weird Registry Reference Error"))
-      }
-    
-      err = svc.Run(t)
-      if err != nil {
-        logger.ErrorLogger(fmt.Errorf("Error in task '%s':%v", n , err))
-      } else {
-        logger.InfoLogger("Task Ran Succesfully")
-      }
 
+    var wg sync.WaitGroup
+    errCh := make(chan error, len(l))
+
+    for _, n := range(l) {
+      wg.Add(1)
+      go func() {
+        defer wg.Done()
+        logger.InfoLogger(fmt.Sprintf("Running Task: %s", n))  
+        t, ok := g.Nodes[n]
+        if !ok {
+          errCh <- fmt.Errorf("Unknown Task: %s", n)
+          return
+        }
+        
+        svc, ok := structures.Registry[t.Service]
+        if !ok {
+          errCh <- fmt.Errorf("Unknown service %s for task %s", t.Service, n)
+          return
+        }
+      
+        err = svc.Run(t)
+        if err != nil {
+          errCh <-fmt.Errorf("Error in task '%s':%v", n , err)
+          return
+        } 
+        logger.InfoLogger("Task Ran Succesfully")
+        
+      }()
     }
+
+
+    wg.Wait()
+    close(errCh)
+
+    for err := range errCh {
+      if err != nil{
+        logger.ErrorLogger(err)
+        return err 
+      }
+    }
+    
   }
+
+  logger.SuccessLogger("Flume Completed")
   return nil
 }  
-  
-
-  
-  
-
-
 
 
 

@@ -3,7 +3,7 @@ package structures
 type Service interface {
   Name() string
   Parameters() []string
-  Run(t Task) error
+  Run(t Task, n string, ctx *Context) error
 }
 
 

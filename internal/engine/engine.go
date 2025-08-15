@@ -12,20 +12,20 @@ import (
 
 
 type Engine struct{
-  TaskName string
+  FlumeName string
   RunID string
   Flume *structures.Pipeline
   LogPath string
   Context *structures.Context
 }
 
-func Build(taskName string) (*Engine, error) {
-  if taskName == "" {
+func Build(flumeName string) (*Engine, error) {
+  if flumeName == "" {
     return nil, fmt.Errorf("How did you hit this")
   }
 
 
-  filePath := fmt.Sprintf("%s.yaml", taskName)
+  filePath := fmt.Sprintf("%s.yaml", flumeName)
 
   p, err := structures.Initialize(filePath)
   if err != nil{
@@ -34,7 +34,7 @@ func Build(taskName string) (*Engine, error) {
 
   
   e := &Engine {
-    TaskName: taskName,
+    FlumeName: flumeName,
     RunID: fmt.Sprintf("%d", time.Now().UnixNano()),
     Flume: p,
     LogPath: p.LogPath,
@@ -51,7 +51,7 @@ func (e *Engine) Start() error {
   warn := color.New(color.FgYellow).SprintFunc()
   
   
-  fmt.Printf("%s %s\n", label("Flume:"), value(e.TaskName))
+  fmt.Printf("%s %s\n", label("Flume:"), value(e.FlumeName))
   fmt.Printf("%s %s\n", label("ID:"), value(e.RunID))
 
   if e.LogPath != "" {
@@ -103,7 +103,7 @@ func (e *Engine) Start() error {
           return
         }
       
-        err = svc.Run(t)
+        err = svc.Run(t, n, e.Context)
         if err != nil {
           errCh <-fmt.Errorf("Error in task '%s':%v", n , err)
           return
@@ -126,6 +126,7 @@ func (e *Engine) Start() error {
     
   }
 
+  fmt.Print(e.Context.Events)
   logger.SuccessLogger("Flume Completed")
   return nil
 }  

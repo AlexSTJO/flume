@@ -22,6 +22,7 @@ type LogLine struct {
 
 var red = color.New(color.FgRed)
 var green = color.New(color.FgGreen)
+var cyan = color.New(color.FgCyan)
 
 
 func timeStamp() time.Time {
@@ -106,6 +107,35 @@ func (c *Config) SuccessLogger(s string) {
     }
   }
 }
+
+func (c *Config) ShellLogger(s string) {
+  if c.NoColor {
+    fmt.Printf(timeStamp().Format(time.TimeOnly) + "  SHELL    " + " %v\n", s)
+  } else {
+    cyan.Printf(timeStamp().Format(time.TimeOnly) + "  SHELL    " + " %v\n", s)
+  }
+
+
+  if c.LogPath != "" {
+    f, err := os.OpenFile(c.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+    if err != nil {
+      panic(err)
+    }
+    defer f.Close()
+
+    entry := LogLine{
+      TS: time.Now().Format(time.TimeOnly),
+      Level: "SHELL",
+      Msg: s,
+    }
+
+    enc := json.NewEncoder(f)
+    if err := enc.Encode(entry); err != nil {
+      panic(err)
+    }
+  }
+}
+
 
 
 

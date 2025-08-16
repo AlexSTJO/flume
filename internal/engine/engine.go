@@ -103,7 +103,7 @@ func (e *Engine) Start() error {
           return
         }
       
-        err = svc.Run(t, n, e.Context)
+        err = svc.Run(t, n, e.Context, &logger)
         if err != nil {
           errCh <-fmt.Errorf("Error in task '%s':%v", n , err)
           return
@@ -126,7 +126,6 @@ func (e *Engine) Start() error {
     
   }
 
-  fmt.Print(e.Context.Events)
   logger.SuccessLogger("Flume Completed")
   return nil
 }  

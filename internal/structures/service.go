@@ -1,9 +1,13 @@
 package structures
 
+import (
+  "github.com/AlexSTJO/flume/internal/logging"
+)
+
 type Service interface {
   Name() string
   Parameters() []string
-  Run(t Task, n string, ctx *Context) error
+  Run(t Task, n string, ctx *Context, l *logging.Config) error
 }
 
 

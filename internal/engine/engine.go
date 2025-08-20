@@ -19,22 +19,9 @@ type Engine struct{
   Context *structures.Context
 }
 
-func Build(flumeName string) (*Engine, error) {
-  if flumeName == "" {
-    return nil, fmt.Errorf("How did you hit this")
-  }
-
-
-  filePath := fmt.Sprintf("%s.yaml", flumeName)
-
-  p, err := structures.Initialize(filePath)
-  if err != nil{
-    return nil, err
-  }
-
-  
+func Build(p *structures.Pipeline) (*Engine, error) { 
   e := &Engine {
-    FlumeName: flumeName,
+    FlumeName: p.Name,
     RunID: fmt.Sprintf("%d", time.Now().UnixNano()),
     Flume: p,
     LogPath: p.LogPath,
@@ -66,6 +53,7 @@ func (e *Engine) Start() error {
   } 
   
   logger.InfoLogger("Graphing Runtime")
+  fmt.Println()
   g, err := structures.BuildGraph(e.Flume) 
   if err != nil {
     logger.ErrorLogger(err)

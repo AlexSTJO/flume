@@ -8,8 +8,10 @@ import (
 
 
 type Pipeline struct { 
+  Name string `yaml:"name"`
   Tasks map[string]Task `yaml:"tasks"`
   LogPath string `yaml:"log_path"`
+  Trigger TriggerSpec `yaml:"trigger"`
 }
 
 type Task struct {
@@ -18,6 +20,15 @@ type Task struct {
   Dependencies []string `yaml:"dependencies"`
   Parameters map[string]string `yaml:"parameters"`
 }
+
+type TriggerSpec struct {
+  Type string `yaml:"type"`
+  CronExpression string `yaml:"cron, omitempty"`
+  Timezone string `yaml:"tz, omitempty"`
+  Path string `yaml:"path, omitempty"`
+}
+
+
 
 
 func Initialize(filepath string) (*Pipeline, error) {

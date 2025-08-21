@@ -38,36 +38,26 @@ func (t *TriggerManager) Handle(p *structures.Pipeline) (error) {
     if spec.Path == "" {
       return fmt.Errorf("No specified path for listener")
     }
-    err := createServer(spec.Path)
-    if err != nil {
-      return err
-    }
+    t.createServer(spec.Path, p)
     return nil
   }
   return nil
 
 }
 
-func (t *TriggerManager) createServer(path string, p *structures.Pipeline) error {
-  CallHandler := func(w http.ResponseWriter, req *http.Request) {
+
+func (t *TriggerManager) createServer(path string, p *structures.Pipeline) {
+  CallHandler := func(w http.ResponseWriter, r *http.Request) {
     e , err := engine.Build(p)
     if err != nil {
-      return err
+      return 
     }
     err = e.Start()
     if err != nil {
-      return err
+      return 
     }
   }
 
   http.HandleFunc(path, CallHandler)
   log.Fatal(http.ListenAndServe(":8080",nil))
-  return nil
-}
-
-
-
-
-  
-  return nil
 }

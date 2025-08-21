@@ -1,10 +1,10 @@
 package logging
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"time"
-  "os"
-  "encoding/json"
 
 	"github.com/fatih/color"
 )
@@ -17,7 +17,7 @@ type Config struct {
 type LogLine struct {
 	TS    string `json:"ts"`
 	Level string `json:"level"`
-	Msg   string `json:"msg"`
+	Msg   string `json:"msg"` 
 }
 
 var red = color.New(color.FgRed)
@@ -29,7 +29,15 @@ func timeStamp() time.Time {
   t := time.Now()
   return t
 }
-  
+
+
+func New(logPath string) (*Config) {
+  c := &Config{
+    NoColor: false,
+    LogPath: logPath,
+  }
+  return c
+} 
 
 func (c *Config) ErrorLogger(e error) {
   if c.NoColor {

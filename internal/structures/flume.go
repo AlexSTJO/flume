@@ -23,9 +23,9 @@ type Task struct {
 
 type TriggerSpec struct {
   Type string `yaml:"type"`
-  CronExpression string `yaml:"cron, omitempty"`
-  Timezone string `yaml:"tz, omitempty"`
-  Path string `yaml:"path, omitempty"`
+  CronExpression string `yaml:"cron,omitempty"`
+  Timezone string `yaml:"tz,omitempty"`
+  Path string `yaml:"path,omitempty"`
 }
 
 

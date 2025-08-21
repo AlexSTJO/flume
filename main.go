@@ -3,30 +3,26 @@ package main
 import (
 	"fmt"
 
-  "github.com/AlexSTJO/flume/internal/engine"
   "github.com/AlexSTJO/flume/internal/logging"
-  "github.com/AlexSTJO/flume/internal/services"
+	"github.com/AlexSTJO/flume/internal/services"
+	"github.com/AlexSTJO/flume/internal/structures"
+	"github.com/AlexSTJO/flume/internal/trigger"
 )
 
 func main(){
   var shell services.ShellService
   _ = shell.Name()
-  e, err := engine.Build("sample")
+
+  p, err := structures.Initialize("sample.yaml")
   if err != nil {
-    fmt.Printf("An error occurred: %v", err)
+    fmt.Printf("An Error Occurred: %v\n", err)
   }
 
+  c := logging.New(p.LogPath)
+  t := trigger.New()
 
-  logger := logging.Config{
-    NoColor: false,
-    LogPath: e.LogPath,
-  }
-
-  err = e.Start()
+  err = t.Handle(p) 
   if err != nil {
-    logger.ErrorLogger(err)
+    c.ErrorLogger(err)
   }
-  
-
-  
 }

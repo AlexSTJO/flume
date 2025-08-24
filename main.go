@@ -6,7 +6,7 @@ import (
   "github.com/AlexSTJO/flume/internal/logging"
 	"github.com/AlexSTJO/flume/internal/services"
 	"github.com/AlexSTJO/flume/internal/structures"
-	"github.com/AlexSTJO/flume/internal/trigger"
+	"github.com/AlexSTJO/flume/internal/server"
 )
 
 func main(){
@@ -19,10 +19,7 @@ func main(){
   }
 
   c := logging.New(p.LogPath)
-  t := trigger.New()
-
-  err = t.Handle(p) 
-  if err != nil {
+  if err = server.CreateServer(); err != nil {
     c.ErrorLogger(err)
   }
 }

@@ -13,11 +13,6 @@ import (
 
 
 func FileWatcher() error {
-  pm, err := generateMeta("sample/sample.yaml")
-  if err != nil {
-    return err
-  }
-  fmt.Println(pm)
   w, err := fsnotify.NewWatcher()
   if err != nil {
     return fmt.Errorf("Error creating file watcher: %w" , err)
@@ -43,7 +38,6 @@ func FileWatcher() error {
 
 
 func watchLoop(w *fsnotify.Watcher) {
-	i := 0
 	for {
 		select {
       case err, ok := <-w.Errors:
@@ -55,11 +49,22 @@ func watchLoop(w *fsnotify.Watcher) {
         if !ok { 
           return
         }
-
-        i++
-        fmt.Printf("%3d %s", i, e)
+        
+        if e.Op&fsnotify.Write == fsnotify.Write || e.Op&fsnotify.Create == fsnotify.Create {
+          
+          ext := filepath.Ext(e.Name)
+          if ext == ".yaml" {
+            change, err := SyncMeta(e.Name)
+            if err != nil {
+              fmt.Printf("ERROR: %s", err)
+            }
+            if change {
+              fmt.Println("Change detected")
+            }
+          }
       }
-	}
+	  }
+  }
 }
 
 func addTree(w *fsnotify.Watcher, root string) error {

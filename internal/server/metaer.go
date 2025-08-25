@@ -1,6 +1,7 @@
 package server
 
 import (
+  "encoding/json"
 	"crypto/sha256"
 	"fmt"
   "io"
@@ -26,15 +27,7 @@ type PipelineMeta struct {
 
 
 
-func generateMeta(yamlPath string) (*PipelineMeta, error) {
-
-  home, err := os.UserHomeDir()
-  if err != nil {
-    return nil, fmt.Errorf("Error getting home directory: %w", err)
-  }
-
-  absPath := filepath.Join(home, ".flume", yamlPath)
-
+func generateMeta(absPath string) (*PipelineMeta, error) {
   p, err := structures.Initialize(absPath)
   if err != nil{
     return nil, fmt.Errorf("Error creating flume: %w", err)
@@ -57,7 +50,7 @@ func generateMeta(yamlPath string) (*PipelineMeta, error) {
   }
   pm := &PipelineMeta{
     Name: p.Name,
-    YamlPath: yamlPath,
+    YamlPath: absPath,
     Trigger: t,
     Enabled: true,
     YamlSha256: sum,
@@ -67,7 +60,71 @@ func generateMeta(yamlPath string) (*PipelineMeta, error) {
   return pm, nil
 }
 
+func writeMeta(pm *PipelineMeta) error {
+  dir := filepath.Dir(pm.YamlPath)
+  metaPath := filepath.Join(dir, "meta.json")
+  
+  if err := os.MkdirAll(filepath.Dir(metaPath), 0o755); err != nil {
+    return fmt.Errorf("Error creating metadata dir: %w", err)
+  }
 
+  data, err := json.MarshalIndent(pm, "", "  ")
+  if err != nil {
+    return fmt.Errorf("Error Marshalling metadata: %w", err)
+  }
+
+  tmp := metaPath+".tmp"
+  if err := os.WriteFile(tmp, data, 0o644); err != nil {
+		return fmt.Errorf("write tmp: %w", err)
+	}
+	if err := os.Rename(tmp, metaPath); err != nil {
+		_ = os.Remove(tmp)
+		return fmt.Errorf("rename meta: %w", err)
+	}
+	return nil
+
+}
+
+func SyncMeta(yamlPath string) (bool, error) {
+  newPM, err := generateMeta(yamlPath)
+  if err != nil {
+    return false, fmt.Errorf("Error generating metadata: %v", err)
+  }
+
+  dir := filepath.Dir(yamlPath)
+  metaPath := filepath.Join(dir, "meta.json")
+   
+  oldPM, _ := readMeta(metaPath)
+
+  if oldPM != nil &&
+		oldPM.YamlSha256 == newPM.YamlSha256 &&
+		oldPM.YamlMtimeUnix == newPM.YamlMtimeUnix &&
+		oldPM.Trigger == newPM.Trigger &&
+		oldPM.Enabled == newPM.Enabled &&
+		oldPM.Name == newPM.Name &&
+		oldPM.YamlPath == newPM.YamlPath {
+		return false, nil
+	}
+
+  if err := writeMeta(newPM); err != nil {
+    return false, err
+  }
+
+  return true, nil
+
+}
+
+func readMeta(metaPath string) (*PipelineMeta, error) {
+  b, err := os.ReadFile(metaPath)
+	if err != nil {
+		return nil, err
+	}
+  var pm *PipelineMeta
+  if err := json.Unmarshal(b, pm); err != nil {
+    return nil, err
+  }
+  return pm, nil
+}
 
 func fileSHA256(path string) (string, error){
   f, err := os.Open(path)
@@ -78,8 +135,6 @@ func fileSHA256(path string) (string, error){
   h := sha256.New()
   if _, err := io.Copy(h, f); err != nil {return "", err } 
   return fmt.Sprintf("%x", h.Sum(nil)), nil
-    
-
 }
 
   

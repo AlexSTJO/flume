@@ -19,7 +19,7 @@ func main(){
   }
 
   c := logging.New(p.LogPath)
-  if err = server.CreateServer(); err != nil {
+  if err = server.FileWatcher(); err != nil {
     c.ErrorLogger(err)
   }
 }

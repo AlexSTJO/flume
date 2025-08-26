@@ -19,12 +19,23 @@ type runRequest struct{
 func CreateServer() error {
   mux := http.NewServeMux()
   mux.HandleFunc("/run", runPipeline)
-  if err := http.ListenAndServe(":8080", mux); err != nil {
-    return fmt.Errorf("Error creating server: %w", err)
-  }
+  go func() {
+    if err := http.ListenAndServe(":8080", mux); err != nil {
+      fmt.Printf("Error creating server: %w", err)
+    }
+  }()
 
-  return nil
-  
+  go func() { 
+    if err := FileWatcher(); err != nil {
+      fmt.Printf("Error creating file watcher: %w", err)
+    }
+  }()
+      
+
+  if err := CronInit(); err != nil {
+    return fmt.Errorf("cron init failed: %w", err)
+  }
+  select {}
 }
 
 func runPipeline(w http.ResponseWriter, r *http.Request) {

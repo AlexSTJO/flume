@@ -59,7 +59,7 @@ func watchLoop(w *fsnotify.Watcher) {
               fmt.Printf("ERROR: %s", err)
             }
             if change {
-              fmt.Println("Change detected")
+            fmt.Printf("Synced file: %s\n", e.Name)
             }
           }
       }

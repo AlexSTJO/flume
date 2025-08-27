@@ -25,16 +25,19 @@ func CreateServer() error {
     }
   }()
 
+  CronManager, err := CronInit()
+  if err != nil {
+    return fmt.Errorf("cron init failed: %w", err)
+  }
+
   go func() { 
-    if err := FileWatcher(); err != nil {
+    if err := FileWatcher(CronManager); err != nil {
       fmt.Printf("Error creating file watcher: %w", err)
     }
   }()
       
 
-  if err := CronInit(); err != nil {
-    return fmt.Errorf("cron init failed: %w", err)
-  }
+  
   select {}
 }
 

@@ -12,7 +12,7 @@ import (
 
 
 
-func FileWatcher() error {
+func FileWatcher(c *CronManager) error {
   w, err := fsnotify.NewWatcher()
   if err != nil {
     return fmt.Errorf("Error creating file watcher: %w" , err)
@@ -20,7 +20,7 @@ func FileWatcher() error {
 
   defer w.Close()
 
-  go watchLoop(w)
+  go watchLoop(w, c)
   home, err := os.UserHomeDir()
   if err != nil {
     return fmt.Errorf("Error finding home directory: %w", err)
@@ -37,7 +37,7 @@ func FileWatcher() error {
 }
 
 
-func watchLoop(w *fsnotify.Watcher) {
+func watchLoop(w *fsnotify.Watcher, c *CronManager) {
 	for {
 		select {
       case err, ok := <-w.Errors:
@@ -50,8 +50,7 @@ func watchLoop(w *fsnotify.Watcher) {
           return
         }
         
-        if e.Op&fsnotify.Write == fsnotify.Write || e.Op&fsnotify.Create == fsnotify.Create {
-          
+        if e.Op&fsnotify.Write == fsnotify.Write || e.Op&fsnotify.Create == fsnotify.Create { 
           ext := filepath.Ext(e.Name)
           if ext == ".yaml" {
             change, err := SyncMeta(e.Name)
@@ -59,7 +58,17 @@ func watchLoop(w *fsnotify.Watcher) {
               fmt.Printf("ERROR: %s", err)
             }
             if change {
-            fmt.Printf("Synced file: %s\n", e.Name)
+              dir := filepath.Dir(e.Name)
+              metaPath := filepath.Join(dir,"meta.json")
+              pm, err := ReadMeta(metaPath)
+              if err != nil {
+                fmt.Printf("%s", err.Error())
+                return
+              } 
+              if pm.Trigger.Type == "cron"{
+                c.ResyncCron(pm)
+              } 
+              fmt.Printf("Synced file: %s\n", e.Name)
             }
           }
       }

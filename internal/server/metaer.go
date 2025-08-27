@@ -94,7 +94,7 @@ func SyncMeta(yamlPath string) (bool, error) {
   dir := filepath.Dir(yamlPath)
   metaPath := filepath.Join(dir, "meta.json")
    
-  oldPM, _ := readMeta(metaPath)
+  oldPM, _ := ReadMeta(metaPath)
 
   if oldPM != nil &&
 		oldPM.YamlSha256 == newPM.YamlSha256 &&
@@ -114,16 +114,16 @@ func SyncMeta(yamlPath string) (bool, error) {
 
 }
 
-func readMeta(metaPath string) (*PipelineMeta, error) {
+func ReadMeta(metaPath string) (*PipelineMeta, error) { 
   b, err := os.ReadFile(metaPath)
 	if err != nil {
 		return nil, err
 	}
-  var pm *PipelineMeta
-  if err := json.Unmarshal(b, pm); err != nil {
+  var pm PipelineMeta
+  if err := json.Unmarshal(b, &pm); err != nil {
     return nil, err
   }
-  return pm, nil
+  return &pm, nil
 }
 
 func fileSHA256(path string) (string, error){

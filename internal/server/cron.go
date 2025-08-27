@@ -43,12 +43,17 @@ func CronInit() (*CronManager, error) {
     if filepath.Base(path) == "meta.json" {
       b, err := os.ReadFile(path)
       if err != nil {
-    return err
+        return err
       }
       
-      var pm PipelineMeta
-      if err = json.Unmarshal(b, &pm); err != nil {
+      pm := &PipelineMeta{}
+      if err = json.Unmarshal(b, pm); err != nil {
         return  err
+      }
+
+      _, err, pm = SyncMeta(pm.YamlPath)
+      if err != nil {
+        return err
       }
       
       if pm.Trigger.Type == "cron" {
@@ -56,7 +61,7 @@ func CronInit() (*CronManager, error) {
           return err
         }
         fmt.Printf("Adding Flume: %s with expression: %s\n", pm.Name, pm.Trigger.Cron )
-        id, err := c.AddFunc(pm.Trigger.Cron, addEntry(&pm, requestUrl))
+        id, err := c.AddFunc(pm.Trigger.Cron, addEntry(pm, requestUrl))
         if err != nil {
           return err
         }

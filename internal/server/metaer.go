@@ -85,10 +85,10 @@ func writeMeta(pm *PipelineMeta) error {
 
 }
 
-func SyncMeta(yamlPath string) (bool, error) {
+func SyncMeta(yamlPath string) (bool, error, *PipelineMeta) {
   newPM, err := generateMeta(yamlPath)
   if err != nil {
-    return false, fmt.Errorf("Error generating metadata: %v", err)
+    return false, fmt.Errorf("Error generating metadata: %v", err), nil
   }
 
   dir := filepath.Dir(yamlPath)
@@ -103,14 +103,14 @@ func SyncMeta(yamlPath string) (bool, error) {
 		oldPM.Enabled == newPM.Enabled &&
 		oldPM.Name == newPM.Name &&
 		oldPM.YamlPath == newPM.YamlPath {
-		return false, nil
+		return false, nil, oldPM
 	}
 
   if err := writeMeta(newPM); err != nil {
-    return false, err
+    return false, err, nil
   }
 
-  return true, nil
+  return true, nil, newPM
 
 }
 

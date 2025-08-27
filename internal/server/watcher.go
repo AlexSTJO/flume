@@ -53,18 +53,11 @@ func watchLoop(w *fsnotify.Watcher, c *CronManager) {
         if e.Op&fsnotify.Write == fsnotify.Write || e.Op&fsnotify.Create == fsnotify.Create { 
           ext := filepath.Ext(e.Name)
           if ext == ".yaml" {
-            change, err := SyncMeta(e.Name)
+            change, err, pm := SyncMeta(e.Name)
             if err != nil {
               fmt.Printf("ERROR: %s", err)
             }
             if change {
-              dir := filepath.Dir(e.Name)
-              metaPath := filepath.Join(dir,"meta.json")
-              pm, err := ReadMeta(metaPath)
-              if err != nil {
-                fmt.Printf("%s", err.Error())
-                return
-              } 
               if pm.Trigger.Type == "cron"{
                 c.ResyncCron(pm)
               } 

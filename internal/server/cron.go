@@ -104,6 +104,8 @@ func (cm *CronManager) ResyncCron(p *PipelineMeta) error {
     cm.CronIDs[p.Name] = newID
     cm.Manager.Remove(id)
     fmt.Printf("Resynced %s's Cron to %s\n",p.Name,  p.Trigger.Cron)
+    cm.Manager.Stop()
+    cm.Manager.Start()
   } 
   return nil 
 }

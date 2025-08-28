@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 
-  "github.com/AlexSTJO/flume/internal/logging"
+	"github.com/AlexSTJO/flume/internal/infra"
+	"github.com/AlexSTJO/flume/internal/logging"
 	"github.com/AlexSTJO/flume/internal/services"
 	"github.com/AlexSTJO/flume/internal/structures"
-	"github.com/AlexSTJO/flume/internal/server"
 )
 
 func main(){
@@ -19,7 +19,12 @@ func main(){
   }
 
   c := logging.New(p.LogPath)
-  if err = server.CreateServer(); err != nil {
+  di, err := infra.New()
+  if err != nil {
+    c.ErrorLogger(err)
+  }
+
+  if err = di.Ec2Lookup(); err != nil {
     c.ErrorLogger(err)
   }
 }

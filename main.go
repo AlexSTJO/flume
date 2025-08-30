@@ -19,12 +19,23 @@ func main(){
   }
 
   c := logging.New(p.LogPath)
-  di, err := infra.New()
+  di, err := infra.Build()
   if err != nil {
     c.ErrorLogger(err)
   }
 
-  if err = di.Ec2Lookup(); err != nil {
+
+
+  r, err := di.Services["ec2"].Call(p.Infrastructure["ec2Check"])
+  if err != nil {
     c.ErrorLogger(err)
+  }
+  
+  if err != nil {
+    c.ErrorLogger(err)
+  }
+
+  for _, n := range(r) {
+    fmt.Println(n)  
   }
 }

@@ -41,8 +41,24 @@ func Build() (*DeploymentInfra, error) {
   return &DeploymentInfra{
     Config: cfg,
     Services: s,
+    TaskReferences: make(map[string][]string),
   }, nil
 }           
+
+
+func (d *DeploymentInfra) CreateReferences(i map[string]structures.Deployment) (error) { 
+  for k, deployment := range(i) {
+    references, err := d.Services[deployment.Service].Call(deployment)
+    if err != nil {
+      return err
+    }
+    fmt.Println(references)
+    d.TaskReferences[k] = references
+  }
+  return nil
+}
+  
+
 
 
 

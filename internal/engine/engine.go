@@ -7,6 +7,7 @@ import (
 
 	"github.com/AlexSTJO/flume/internal/logging"
 	"github.com/AlexSTJO/flume/internal/structures"
+  "github.com/AlexSTJO/flume/internal/infra"
 	"github.com/fatih/color"
 )
 
@@ -27,7 +28,7 @@ func Build(p *structures.Pipeline) (*Engine, error) {
     LogPath: p.LogPath,
     Context: structures.NewContext(),
   }
-
+  
   return e, nil
 }
 
@@ -51,6 +52,16 @@ func (e *Engine) Start() error {
     NoColor: false,
     LogPath: e.LogPath,
   } 
+  
+  infrastructure, err := infra.Build()
+  if err != nil {
+    logger.ErrorLogger(err)
+  }
+
+  if err = infrastructure.CreateReferences(e.Flume.Infrastructure); err != nil {
+    logger.ErrorLogger(err)
+  }
+
   
   logger.InfoLogger("Graphing Runtime")
   fmt.Println()

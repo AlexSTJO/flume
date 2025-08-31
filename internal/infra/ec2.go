@@ -43,12 +43,6 @@ func Configure(cfg aws.Config) (Service){
 func (e *EC2Service) check(d structures.Deployment) ([]string, error) {
   filters := []types.Filter{}
 
-
-
-  // if d.Tags is nil, what to do
-  // if d.State is nil what to do
-
-
   for k, p := range(d.Tags) {
     k := fmt.Sprintf("tag:%s", k)
     t := types.Filter{
@@ -58,6 +52,7 @@ func (e *EC2Service) check(d structures.Deployment) ([]string, error) {
 
     filters = append(filters, t)
   }
+
   if d.States != nil {
     s := types.Filter {
       Name:  aws.String("instance-state-name"),
@@ -69,6 +64,7 @@ func (e *EC2Service) check(d structures.Deployment) ([]string, error) {
   o, err := e.client.DescribeInstances(context.TODO(), &ec2.DescribeInstancesInput{
     Filters: filters,
   })
+
   if err != nil {
     return nil,err
   }

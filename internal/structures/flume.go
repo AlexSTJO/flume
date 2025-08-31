@@ -20,6 +20,7 @@ type Task struct {
   Service string `yaml:"service"`
   Dependencies []string `yaml:"dependencies"`
   Parameters map[string]string `yaml:"parameters"`
+  Resources []string `yaml:"resources,omitempty"`
 }
 
 type TriggerSpec struct {

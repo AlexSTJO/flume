@@ -102,7 +102,7 @@ func (e *Engine) Start() error {
           return
         }
       
-        err = svc.Run(t, n, e.Context, &logger)
+        err = svc.Run(t, n, e.Context, &logger, infrastructure.TaskReferences)
         if err != nil {
           errCh <-fmt.Errorf("Error in task '%s':%v", n , err)
           return

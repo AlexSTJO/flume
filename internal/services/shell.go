@@ -22,7 +22,16 @@ func (s ShellService) Parameters() []string {
   return []string{"command"}
 } 
 
-func (s ShellService) Run(t structures.Task, n string,  ctx *structures.Context, l *logging.Config) error { 
+func (s ShellService) Run(t structures.Task, n string,  ctx *structures.Context, l *logging.Config, d map[string][]string) error { 
+  ids := make([]string,0)
+  if t.Resources != nil{
+    for _, r := range(t.Resources) {
+      ids = append(ids, d[r]...)
+    }
+    l.InfoLogger("Found resource IDs")
+  }
+
+      
   rContext := make(map[string]string, 2)
   command := t.Parameters["command"]
 

@@ -32,9 +32,9 @@ func Build() (*DeploymentInfra, error) {
   s := make(map[string]Service, len(registry))
   
   
-  for k, v := range(registry) {
+  for k, config := range(registry) {
     fmt.Println(k)
-    s[k] = v(cfg)
+    s[k] = config(cfg) 
   }
 
 

@@ -33,6 +33,7 @@ type Deployment struct {
   Service string `yaml:"service"`
   Action string `yaml:"action"`
   Tags map[string][]string `yaml:"tags,omitempty"`
+  States []string `yaml:"states,omitempty"`
 }
   
 

@@ -9,6 +9,7 @@ import (
 	"github.com/AlexSTJO/flume/internal/structures"
   "github.com/AlexSTJO/flume/internal/infra"
 	"github.com/fatih/color"
+  "github.com/joho/godotenv"
 )
 
 
@@ -20,7 +21,7 @@ type Engine struct{
   Context *structures.Context
 }
 
-func Build(p *structures.Pipeline) (*Engine, error) { 
+func Build(p *structures.Pipeline) (*Engine, error) {  
   e := &Engine {
     FlumeName: p.Name,
     RunID: fmt.Sprintf("%d", time.Now().UnixNano()),
@@ -52,6 +53,11 @@ func (e *Engine) Start() error {
     NoColor: false,
     LogPath: e.LogPath,
   } 
+
+  err := godotenv.Load() 
+	if err != nil {
+		logger.ErrorLogger(fmt.Errorf("Error loading .env file"))
+	}
   
   infrastructure, err := infra.Build()
   if err != nil {

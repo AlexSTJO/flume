@@ -1,14 +1,14 @@
 package services
 
 import (
-  "os/exec"
-  "os"
-  "fmt"
-  "bytes"
+	"bytes"
+	"fmt"
+	"os"
+	"os/exec"
 
-  "github.com/AlexSTJO/flume/internal/structures"
-  "github.com/AlexSTJO/flume/internal/logging"
-
+	"github.com/AlexSTJO/flume/internal/logging"
+	"github.com/AlexSTJO/flume/internal/resolver"
+	"github.com/AlexSTJO/flume/internal/structures"
 )
 
 type ShellService struct {}
@@ -33,7 +33,13 @@ func (s ShellService) Run(t structures.Task, n string,  ctx *structures.Context,
 
       
   rContext := make(map[string]string, 2)
-  command := t.Parameters["command"]
+  command, err := resolver.ResolveString(t.Parameters["command"], ctx, d)
+  
+  if err != nil {
+    rContext["success"] = "false"
+    ctx.SetEventValues(n,rContext)
+    return err
+  }
 
   cmd := exec.Command("sh", "-c", command)
 
@@ -43,7 +49,7 @@ func (s ShellService) Run(t structures.Task, n string,  ctx *structures.Context,
   cmd.Stderr = &errBuf
   cmd.Stdin = os.Stdin
   
-  err := cmd.Run()
+  err = cmd.Run()
 
   if (err != nil) {
     rContext["success"] = "false"

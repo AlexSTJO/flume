@@ -18,6 +18,6 @@ Create a command:
 
 
 Next direction:
-    Flume server handling
+    Attachment handling on smtp
     Concurrency and levels essentially being abstracted dependencies
-    Deployment layer?
+

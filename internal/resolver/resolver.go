@@ -35,8 +35,9 @@ func ResolveString(s string, ctx *structures.Context, infra map[string][]string)
         for i, n := range(rawResult) {
           if i == 0 {
             result = n
+          } else {
+            result = result + "," + n
           }
-          result = result + "," + "n"
         }
         return result
       }

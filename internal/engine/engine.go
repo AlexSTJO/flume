@@ -113,7 +113,7 @@ func (e *Engine) Start() error {
           errCh <-fmt.Errorf("Error in task '%s':%v", n , err)
           return
         } 
-        logger.InfoLogger("Task Ran Succesfully")
+        logger.InfoLogger("Task Ran Succesfully\n")
         
       }()
     }

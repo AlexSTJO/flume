@@ -118,9 +118,9 @@ func (c *Config) SuccessLogger(s string) {
 
 func (c *Config) ShellLogger(s string) {
   if c.NoColor {
-    fmt.Printf(timeStamp().Format(time.TimeOnly) + "  SHELL    " + " %v\n", s)
+    fmt.Printf(timeStamp().Format(time.TimeOnly) + "  SHELL    " + " %v", s)
   } else {
-    cyan.Printf(timeStamp().Format(time.TimeOnly) + "  SHELL    " + " %v\n", s)
+    cyan.Printf(timeStamp().Format(time.TimeOnly) + "  SHELL    " + " %v", s)
   }
 
 

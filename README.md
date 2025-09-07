@@ -19,5 +19,4 @@ Create a command:
 
 Next direction:
     Attachment handling on smtp
-    Concurrency and levels essentially being abstracted dependencies
-
+    Need to create when paramater and loop parameter

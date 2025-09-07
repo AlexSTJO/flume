@@ -24,11 +24,12 @@ func BuildGraph(p *Pipeline) (*Graph, error) {
     InDeg: make(map[string]int, len(p.Tasks)),
   }
 
-  for name,t := range(p.Tasks) {
-
-    g.Nodes[name] = t 
+  for name, t := range(p.Tasks) {
+    g.Nodes[name] = t
     g.InDeg[name] = 0
-    
+  }
+
+  for name,t := range(p.Tasks) { 
     seen := make(map[string]struct{}, len(p.Tasks))
     for _, dependency := range(t.Dependencies) {
       if dependency == name {

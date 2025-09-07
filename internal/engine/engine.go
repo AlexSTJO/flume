@@ -2,14 +2,15 @@ package engine
 
 import (
 	"fmt"
+	"runtime"
 	"sync"
 	"time"
 
+	"github.com/AlexSTJO/flume/internal/infra"
 	"github.com/AlexSTJO/flume/internal/logging"
 	"github.com/AlexSTJO/flume/internal/structures"
-  "github.com/AlexSTJO/flume/internal/infra"
 	"github.com/fatih/color"
-  "github.com/joho/godotenv"
+	"github.com/joho/godotenv"
 )
 
 
@@ -68,6 +69,8 @@ func (e *Engine) Start() error {
     logger.ErrorLogger(err)
   }
 
+  ctx := structures.NewContext()
+
   
   logger.InfoLogger("Graphing Runtime")
   fmt.Println()
@@ -75,61 +78,85 @@ func (e *Engine) Start() error {
   if err != nil {
     logger.ErrorLogger(err)
   }
+  
+  if g == nil || len(g.Nodes) == 0 {
+    logger.ErrorLogger(fmt.Errorf("Graph is empty"))
+  }
 
+  // Will have to set up maxparallel specification in Config
 
-  levels, err := g.Levels()
-  if err != nil {
-    logger.ErrorLogger(err)
+  in := make(map[string]int, len(g.InDeg))
+  for n, v := range(g.InDeg) {
+    in[n] = v
+  }
+
+  ready := make(chan string, len(g.Nodes))
+  var wg sync.WaitGroup
+
+  for n,v := range(in) {
+    if v == 0 {
+      ready <- n
+    }
   }
 
 
-  for _, l := range(levels) {
-    if len(l) == 0 {
-      continue
-    }
+  var (
+    mu sync.Mutex
+    completed int
+    closeOnce sync.Once
+  )
 
-    var wg sync.WaitGroup
-    errCh := make(chan error, len(l))
-
-    for _, n := range(l) {
-      wg.Add(1)
-      go func() {
-        defer wg.Done()
-        logger.InfoLogger(fmt.Sprintf("Running Task: %s", n))  
-        t, ok := g.Nodes[n]
-        if !ok {
-          errCh <- fmt.Errorf("Unknown Task: %s", n)
-          return
-        }
-        
-        svc, ok := structures.Registry[t.Service]
-        if !ok {
-          errCh <- fmt.Errorf("Unknown service %s for task %s", t.Service, n)
-          return
-        }
-      
-        err = svc.Run(t, n, e.Context, &logger, infrastructure.TaskReferences)
-        if err != nil {
-          errCh <-fmt.Errorf("Error in task '%s':%v", n , err)
-          return
-        } 
-        logger.InfoLogger("Task Ran Succesfully\n")
-        
-      }()
-    }
-
-
-    wg.Wait()
-    close(errCh)
-
-    for err := range errCh {
-      if err != nil{
-        logger.ErrorLogger(err)
-        return err 
+  markDone := func(u string) {
+    for _, v := range(g.Adj[u]) {
+      mu.Lock()
+      in[v]--
+      if in[v] == 0 {
+        ready <- v
       }
+    mu.Unlock()
     }
-    
   }
+
+
+  worker := func() {
+    defer wg.Done()
+    for name := range(ready){
+      logger.InfoLogger(fmt.Sprintf("Worker recieved task: %s", name))
+      task := g.Nodes[name]
+      svc, ok := structures.Registry[task.Service]
+      if !ok {
+        logger.ErrorLogger(fmt.Errorf("Unrecognized service"))
+      }
+      if err = svc.Run(task, name, ctx, &logger, infrastructure.TaskReferences); err != nil {
+        close(ready)
+        logger.ErrorLogger(err)
+      } 
+      markDone(name)
+      
+      mu.Lock()
+      completed++
+      done := completed == len(g.Nodes) 
+      mu.Unlock()
+
+      if done {
+       closeOnce.Do(func() { close(ready) })
+      }
+
+    }
+  }
+
+  maxParallel := runtime.NumCPU()
+  
+  wg.Add(maxParallel)
+  for i := 0; i < maxParallel; i++ {
+    go worker()
+  }
+  
+  wg.Wait()
+
+  if completed != len(g.Nodes) {
+    logger.ErrorLogger(fmt.Errorf("cycle detected: only completed %d of %d tasks", completed, len(g.Nodes)))
+	}
 
   logger.SuccessLogger("Flume Completed")
   return nil

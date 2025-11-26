@@ -22,15 +22,22 @@ func (e *EC2Service) Name() string {
 
 func (e *EC2Service) Call(d structures.Deployment) ([]string, error) {
   switch d.Action {
-    case "check": {
-      ids, err := e.check(d)
+    case "fs": {
+      ids, err := e.search(d)
+      if err != nil {
+        return nil, err
+      }
+      return ids, nil 
+    }
+
+    case "tfs": {
+      ids, err := e.terraform_search(d)
       if err != nil {
         return nil, err
       }
       return ids, nil 
     }
   }
-
   return nil, fmt.Errorf("Action not found")
 }
 
@@ -40,7 +47,7 @@ func Configure(cfg aws.Config) (Service){
   }
 }
 
-func (e *EC2Service) check(d structures.Deployment) ([]string, error) {
+func (e *EC2Service) search(d structures.Deployment) ([]string, error) {
   filters := []types.Filter{}
 
   for k, p := range(d.Tags) {
@@ -50,7 +57,7 @@ func (e *EC2Service) check(d structures.Deployment) ([]string, error) {
         Values: p,
     }
 
-    filters = append(filters, t)
+    filters = append(filters, t)  
   }
 
   if d.States != nil {
@@ -81,6 +88,46 @@ func (e *EC2Service) check(d structures.Deployment) ([]string, error) {
 
 }
 
+func (e *EC2Service) terraform_search(d structures.Deployment)  ([]string, error) {
+  var ids []string
+  state, err := TerraformState(d.Key)
+  if err != nil{
+    return nil,err
+  }
+  
+  for _,r := range(state.Resources) {
+    if r.Type != "aws_instance" {
+      continue
+    } else {
+      for _,i := range(r.Instances) {
+        match := true
+        for k, vs := range(d.Tags) {
+          for _, v := range(vs) { 
+            match = false
+            if i.Attributes.Tags[k] == v {
+              match = true
+              break
+            }
+          }
+        } 
+        if match != false && len(d.States) > 0 {
+          match = false
+          for _, s := range(d.States) {
+            if i.Attributes.State == s {
+              match = true
+              break
+            }
+          }
+        }
+
+        if match {
+          ids = append(ids, i.Attributes.Id)
+        }     
+      }             
+    }
+  }
+  return ids, nil
+}
 
 
 func init() {

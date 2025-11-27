@@ -12,14 +12,13 @@ import (
 var placeholderRE = regexp.MustCompile(`\$\{([^}]+)\}`)
 
 
-func ResolveString(s string, ctx *structures.Context, infra map[string][]string) (string, error) {
+func ResolveString(s string, ctx *structures.Context) (string, error) {
   var e error
   result := placeholderRE.ReplaceAllStringFunc(s, func(m string)(string) {
     key := strings.TrimSpace(m[2:len(m) -1])
     
     parts := strings.SplitN(key, ":" , 2)
     // context:build.status
-    // infra:ec2check
     // env:dbname
     switch parts[0] {
       case "context": {
@@ -29,24 +28,12 @@ func ResolveString(s string, ctx *structures.Context, infra map[string][]string)
       
         return result
       }
-      case "infra": {
-        rawResult := infra[parts[1]]
-        var result string
-        for i, n := range(rawResult) {
-          if i == 0 {
-            result = n
-          } else {
-            result = result + "," + n
-          }
-        }
-        return result
-      }
       case "env": {
         return os.Getenv(parts[1])
       }
     }
 
-    e = fmt.Errorf("Invalid Referenc: %s", s)
+    e = fmt.Errorf("Invalid Reference: %s", s)
     return "ERROR"
   })
 

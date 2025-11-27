@@ -1,65 +1,30 @@
 package infra
 
 import (
-	"context"
-  "fmt"
-
 	"github.com/AlexSTJO/flume/internal/structures"
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
+  "fmt"
 )
-
-type DeploymentInfra struct {
-  Config aws.Config
-  TaskReferences map[string][]string
-  Services map[string]Service
-}
 
 type Service interface{
   Name() string
-  Call(d structures.Deployment) ([]string, error)  
+  Call(d structures.Deployment) (error)  
 }
 
-type Factory func(aws.Config)Service
 
-var registry = map[string]Factory{}
-
-func Build() (*DeploymentInfra, error) {
-  cfg, err := config.LoadDefaultConfig(context.TODO())
-  if err != nil {
-    return nil,  err
-  }
-  s := make(map[string]Service, len(registry))
-  
-  
-  for k, config := range(registry) {
-    fmt.Println(k)
-    s[k] = config(cfg) 
-  }
+var registry = map[string]Service{}        
 
 
-  return &DeploymentInfra{
-    Config: cfg,
-    Services: s,
-    TaskReferences: make(map[string][]string),
-  }, nil
-}           
+func Deploy(i map[string]structures.Deployment) error {
+    for _, deployment := range i {
+        svc, ok := registry[deployment.Service]
+        if !ok {
+            return fmt.Errorf("unknown service %q", deployment.Service)
+        }
 
-
-func (d *DeploymentInfra) CreateReferences(i map[string]structures.Deployment) (error) { 
-  for k, deployment := range(i) {
-    references, err := d.Services[deployment.Service].Call(deployment)
-    if err != nil {
-      return err
+        if err := svc.Call(deployment); err != nil {
+            return err
+        }
     }
-    fmt.Println(references)
-    d.TaskReferences[k] = references
-  }
-  return nil
+    return nil
 }
   
-
-
-
-
-

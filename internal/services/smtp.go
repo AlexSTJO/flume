@@ -22,7 +22,7 @@ func (s EmailService) Parameters() []string {
   return []string{"username", "password", "host", "recipient", "subject", "body"}
 }
 
-func (s EmailService) Run(t structures.Task, n string, ctx *structures.Context, l *logging.Config, d map[string][]string) error {
+func (s EmailService) Run(t structures.Task, n string, ctx *structures.Context, l *logging.Config) error {
   tContext := make(map[string]string)
   var err error
   defer func() {
@@ -32,7 +32,7 @@ func (s EmailService) Run(t structures.Task, n string, ctx *structures.Context, 
 
   
   resolve:= func(key string) (string, error) {
-    v, err:= resolver.ResolveString(t.Parameters[key], ctx, d)
+    v, err:= resolver.ResolveString(t.Parameters[key], ctx)
     if err!= nil {
       l.ErrorLogger(err)
     }

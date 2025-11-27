@@ -33,9 +33,8 @@ type TriggerSpec struct {
 type Deployment struct {
   Service string `yaml:"service"`
   Action string `yaml:"action"`
-  Key string `yaml:"key,omitempty"`
-  Tags map[string][]string `yaml:"tags,omitempty"`
-  States []string `yaml:"states,omitempty"`
+  Key string `yaml:"key"`
+  VarFile string `yaml:"var-file,omitempty"`
 }
   
 

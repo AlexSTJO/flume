@@ -6,8 +6,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-
+  "github.com/AlexSTJO/flume/internal/logging"
 	"github.com/AlexSTJO/flume/internal/structures"
+  "errors"
 )
 
 type State struct{
@@ -37,15 +38,28 @@ func (t *Terraform) Name() string {
   return "terraform"
 }
 
-func (t *Terraform) Call(d structures.Deployment) (error) {
+func (t *Terraform) Call(d structures.Deployment, l *logging.Config) (error) {
   switch d.Action {
-    case "sync": {
+  case "sync": {
     if err := TerraformInit(d.Key); err !=nil {
-        return fmt.Errorf("Terraform Init Failed: %w", err)
-      }
-    } 
-    default:
-      return fmt.Errorf("Unknown Action: %w", d.Action)
+      return fmt.Errorf("Terraform Init Failed: %w", err)
+    }
+    l.InfoLogger("Terraform Initialization Succesful")
+
+    changes, err := TerraformPlan(d.Key, d.VarFile)
+    if err != nil{
+      return fmt.Errorf("Terraform Plan Failed: %w", err)
+    }
+
+    if changes{
+      l.InfoLogger("Changes can be made")
+    } else {
+      l.InfoLogger("Terraform Modules Up To Date With Infrastructure")
+    }
+    
+  } 
+  default:
+    return fmt.Errorf("Unknown Action: %s", d.Action)
   }
 
   return nil 
@@ -79,15 +93,43 @@ func TerraformInit(key string) error {
   cmd.Dir = filepath.Join(home, key)
   cmd.Env = append(os.Environ(), "TF_IN_AUTOMATION=1")
 
-  out, err := cmd.CombinedOutput()
+  _, err = cmd.CombinedOutput()
 
-  fmt.Println("terraform init output", "stdout", string(out))
   if err != nil {
     return fmt.Errorf("terraform_init failed: %w", err)
   }
   
-  return nil 
+  return nil
+}
 
+
+func TerraformPlan(key string, var_file string) (bool, error) {
+  home, err := os.UserHomeDir()
+  if err != nil {
+    return false, err
+  }
+
+  cmd := exec.Command("terraform", "plan", "-detailed-exitcode", "-input=false", "-no-color")
+  cmd.Dir = filepath.Join(home, key)
+  cmd.Env = append(os.Environ(), "TF_IN_AUTOMATION=1")
+
+  _, err = cmd.CombinedOutput()
+
+  if err == nil {
+    return false, nil
+  }
+  var exitErr *exec.ExitError
+  if errors.As(err, &exitErr) {
+    switch exitErr.ExitCode() {
+      case 0:
+        return false, nil
+      case 2:
+        return true, nil
+      default:
+        return false, fmt.Errorf("Terraform Plan failed with exit code %d: %w", exitErr.ExitCode(), err)
+    }
+  }
+  return false, fmt.Errorf("running terraform plan: %w", err)
 }
 
 func ParseState(data []byte) (*State, error) {

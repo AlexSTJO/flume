@@ -60,7 +60,7 @@ func (e *Engine) Start() error {
 		logger.ErrorLogger(fmt.Errorf("Error loading .env file"))
 	}
   
-  err = infra.Deploy(e.Flume.Infrastructure)
+  err = infra.Deploy(e.Flume.Infrastructure, &logger)
   if err != nil {
     logger.ErrorLogger(err)
   }

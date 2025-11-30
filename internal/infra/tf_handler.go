@@ -11,6 +11,7 @@ import (
   "errors"
 )
 
+
 type State struct{
   Resources []Resource `json:"resources"`
 }
@@ -52,7 +53,13 @@ func (t *Terraform) Call(d structures.Deployment, l *logging.Config) (error) {
     }
 
     if changes{
-      l.InfoLogger("Changes can be made")
+      l.InfoLogger("Changes can be made. Running Apply")
+      err := TerraformApply(d.Key, d.VarFile)
+      if err != nil {
+        l.ErrorLogger(fmt.Errorf("Error Applying Terraform Deployment"))
+        return err
+      }
+      l.SuccessLogger("Succesfaul Terraform Apply")
     } else {
       l.InfoLogger("Terraform Modules Up To Date With Infrastructure")
     }
@@ -108,8 +115,8 @@ func TerraformPlan(key string, var_file string) (bool, error) {
   if err != nil {
     return false, err
   }
-
-  cmd := exec.Command("terraform", "plan", "-detailed-exitcode", "-input=false", "-no-color")
+  
+  cmd := exec.Command("terraform", "plan", "-detailed-exitcode", "-input=false", "-var-file="+var_file, "-no-color")
   cmd.Dir = filepath.Join(home, key)
   cmd.Env = append(os.Environ(), "TF_IN_AUTOMATION=1")
 
@@ -138,6 +145,25 @@ func ParseState(data []byte) (*State, error) {
     return nil, err
   }
   return &s, nil
+}
+
+func TerraformApply(key string, var_file string) (error) {
+  home, err := os.UserHomeDir()
+  if err != nil {
+    return err
+  }
+  cmd := exec.Command("terraform", "apply", "-auto-approve", "-input=false", "-var-file="+var_file)
+  cmd.Dir = filepath.Join(home, key)
+  
+  out, err := cmd.CombinedOutput() // stdout + stderr together
+	output := string(out)
+
+	if err != nil {
+		return fmt.Errorf(
+			"terraform apply failed in dir %s with args %+v: %w\noutput:\n%s",err, output,
+		)
+	}
+  return nil
 }
 
 

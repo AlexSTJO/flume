@@ -20,3 +20,4 @@ Create a command:
 Next direction:
     Attachment handling on smtp
     Need to create when paramater and loop parameter
+    Pipe tf error logs into pipeline directory

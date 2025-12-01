@@ -59,7 +59,7 @@ func (t *Terraform) Call(d structures.Deployment, l *logging.Config) (error) {
         l.ErrorLogger(fmt.Errorf("Error Applying Terraform Deployment"))
         return err
       }
-      l.SuccessLogger("Succesfaul Terraform Apply")
+      l.SuccessLogger("Succesful Terraform Apply")
     } else {
       l.InfoLogger("Terraform Modules Up To Date With Infrastructure")
     }
@@ -155,13 +155,11 @@ func TerraformApply(key string, var_file string) (error) {
   cmd := exec.Command("terraform", "apply", "-auto-approve", "-input=false", "-var-file="+var_file)
   cmd.Dir = filepath.Join(home, key)
   
-  out, err := cmd.CombinedOutput() // stdout + stderr together
-	output := string(out)
+  _, err = cmd.CombinedOutput() // stdout + stderr together
 
 	if err != nil {
 		return fmt.Errorf(
-			"terraform apply failed in dir %s with args %+v: %w\noutput:\n%s",err, output,
-		)
+      "terraform apply failed status: %w",err)
 	}
   return nil
 }

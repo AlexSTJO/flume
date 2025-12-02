@@ -7,7 +7,7 @@ import (
 type Service interface {
   Name() string
   Parameters() []string
-  Run(t Task, n string, ctx *Context, l *logging.Config) error
+  Run(t Task, n string, ctx *Context, infra_outputs *map[string]map[string]string, l *logging.Config) error
 }
 
 

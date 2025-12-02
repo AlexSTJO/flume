@@ -60,7 +60,7 @@ func (e *Engine) Start() error {
 		logger.ErrorLogger(fmt.Errorf("Error loading .env file"))
 	}
   
-  err = infra.Deploy(e.Flume.Infrastructure, &logger)
+  infra_outputs, err := infra.Deploy(e.Flume.Infrastructure, &logger)
   if err != nil {
     logger.ErrorLogger(err)
   }
@@ -124,7 +124,7 @@ func (e *Engine) Start() error {
       if !ok {
         logger.ErrorLogger(fmt.Errorf("Unrecognized service"))
       }
-      if err = svc.Run(task, name, ctx, &logger); err != nil {
+      if err = svc.Run(task, name, ctx, infra_outputs, &logger); err != nil {
         close(ready)
         logger.ErrorLogger(err)
       } 

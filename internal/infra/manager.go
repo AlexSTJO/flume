@@ -9,24 +9,25 @@ import (
 
 type Service interface{
   Name() string
-  Call(d structures.Deployment, l *logging.Config) (error)  
+  Call(d structures.Deployment, l *logging.Config) (map[string]string, error)  
 }
-
 
 var registry = map[string]Service{}        
 
 
-func Deploy(i map[string]structures.Deployment,l *logging.Config) error {
-    for _, deployment := range i {
-        svc, ok := registry[deployment.Service]
-        if !ok {
-            return fmt.Errorf("unknown service %q", deployment.Service)
-        }
-
-        if err := svc.Call(deployment, l); err != nil {
-            return err
-        }
+func Deploy(i map[string]structures.Deployment,l *logging.Config) (*map[string]map[string]string, error) {
+  svc_outputs := make(map[string]map[string]string) 
+  for _, deployment := range i {
+    svc, ok := registry[deployment.Service]
+    if !ok {
+        return nil, fmt.Errorf("unknown service %q", deployment.Service)
     }
-    return nil
+    outputs, err := svc.Call(deployment, l)
+    if err != nil {
+        return nil, err
+    }
+    svc_outputs[svc.Name()] = outputs
+  }
+  return &svc_outputs, nil
 }
   

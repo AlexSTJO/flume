@@ -32,6 +32,12 @@ type Attributes struct {
   State string `json:"instance_state"`
 }
 
+type tfOutputValue struct {
+    Sensitive bool            `json:"sensitive"`
+    Type      json.RawMessage `json:"type"`
+    Value     string             `json:"value"`
+}
+
 type Terraform struct {}
 
 
@@ -39,17 +45,17 @@ func (t *Terraform) Name() string {
   return "terraform"
 }
 
-func (t *Terraform) Call(d structures.Deployment, l *logging.Config) (error) {
+func (t *Terraform) Call(d structures.Deployment, l *logging.Config) (map[string]string, error) {
   switch d.Action {
   case "sync": {
     if err := TerraformInit(d.Key); err !=nil {
-      return fmt.Errorf("Terraform Init Failed: %w", err)
+      return nil, fmt.Errorf("Terraform Init Failed: %w", err)
     }
     l.InfoLogger("Terraform Initialization Succesful")
 
     changes, err := TerraformPlan(d.Key, d.VarFile)
     if err != nil{
-      return fmt.Errorf("Terraform Plan Failed: %w", err)
+      return nil, fmt.Errorf("Terraform Plan Failed: %w", err)
     }
 
     if changes{
@@ -57,19 +63,22 @@ func (t *Terraform) Call(d structures.Deployment, l *logging.Config) (error) {
       err := TerraformApply(d.Key, d.VarFile)
       if err != nil {
         l.ErrorLogger(fmt.Errorf("Error Applying Terraform Deployment"))
-        return err
+        return nil, err
       }
-      l.SuccessLogger("Succesful Terraform Apply")
+      l.SuccessLogger("Succesful Terraform Apply") 
     } else {
       l.InfoLogger("Terraform Modules Up To Date With Infrastructure")
     }
     
   } 
   default:
-    return fmt.Errorf("Unknown Action: %s", d.Action)
+    return nil, fmt.Errorf("Unknown Action: %s", d.Action)
   }
-
-  return nil 
+  tf_outputs, err := TerraformOutputs(d.Key)
+  if err != nil{
+    l.ErrorLogger(fmt.Errorf("Error Parsing Terraform Outputs"))
+  }
+  return tf_outputs, nil
 }
 
 
@@ -162,6 +171,31 @@ func TerraformApply(key string, var_file string) (error) {
       "terraform apply failed status: %w",err)
 	}
   return nil
+}
+
+func TerraformOutputs(key string) (map[string]string, error) {
+  home, err := os.UserHomeDir()
+  if err != nil {
+    return nil, err
+  }
+  cmd := exec.Command("terraform", "output", "-json")
+  cmd.Dir = filepath.Join(home, key)
+
+  out, err := cmd.CombinedOutput()
+  if err != nil {
+    return nil, fmt.Errorf("decode terraform outputs: %w", err)
+  }
+  var parsed map[string]tfOutputValue
+  if err := json.Unmarshal(out, &parsed); err != nil {
+    return nil, fmt.Errorf("Unparsable terraform output: %w", err)
+  }
+
+  outputs := make(map[string]string, len(parsed))
+  for name, v := range parsed {
+    outputs[name] = v.Value
+  }
+
+  return outputs, nil
 }
 
 

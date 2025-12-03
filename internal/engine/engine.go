@@ -2,9 +2,11 @@ package engine
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 	"sync"
 	"time"
+  "path/filepath"
 
 	"github.com/AlexSTJO/flume/internal/infra"
 	"github.com/AlexSTJO/flume/internal/logging"
@@ -67,6 +69,14 @@ func (e *Engine) Start() error {
 
 
   ctx := structures.NewContext()
+  home, err := os.UserHomeDir()
+  if err != nil {
+    logger.ErrorLogger(fmt.Errorf("Failed to get home dir: %w", err))
+  }
+  flume_info := make(map[string]string, 1)
+  flume_path := filepath.Join(home, ".flume", e.FlumeName)
+  flume_info["path"] = flume_path 
+  ctx.SetEventValues("flume_info", flume_info)
 
   
   logger.InfoLogger("Graphing Runtime")

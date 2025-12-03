@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+  "strings"
 
 	"github.com/joho/godotenv"
 	"github.com/robfig/cron/v3"
@@ -39,7 +40,16 @@ func CronInit() (*CronManager, error) {
   
   root := filepath.Join(home, ".flume")
   cronIDs := make(map[string]cron.EntryID)
+  root = filepath.Clean(root)
+  rootDepth := strings.Count(root, string(os.PathSeparator))
   err = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+    if d.IsDir() {
+        depth := strings.Count(path, string(os.PathSeparator))
+        if depth > rootDepth+1 {
+            return filepath.SkipDir
+        }
+        return nil
+      }    
     if filepath.Base(path) == "meta.json" {
       b, err := os.ReadFile(path)
       if err != nil {

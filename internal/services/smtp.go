@@ -29,23 +29,25 @@ func (s EmailService) Run(t structures.Task, n string, ctx *structures.Context, 
     tContext["success"] = strconv.FormatBool(err == nil)
     ctx.SetEventValues(n, tContext)
   }()
-
-  
-  resolve:= func(key string) (string, error) {
-    v, err:= resolver.ResolveString(t.Parameters[key], ctx, infra_outputs)
-    if err!= nil {
-      l.ErrorLogger(err)
-    }
-    return v, err
-  }
-
-  username, err:= resolve("username"); if err != nil { return err}
-  password, err:= resolve("password"); if err != nil { return err}
-  host, err:= resolve("host"); if err != nil { return err}
-  subject, err:= resolve("subject");  if err != nil { return err}
-  body, err:= resolve("body"); if err != nil { return err}
-  recipient, err:= resolve("recipient"); if err != nil { return err}
  
+  username, err := resolver.ResolveParam("username", t.Parameters, ctx, infra_outputs)
+  if err != nil { return err }
+
+  password, err := resolver.ResolveParam("password", t.Parameters, ctx, infra_outputs)
+  if err != nil { return err }
+
+  host, err := resolver.ResolveParam("host", t.Parameters, ctx, infra_outputs)
+  if err != nil { return err }
+
+  subject, err := resolver.ResolveParam("subject", t.Parameters, ctx, infra_outputs)
+  if err != nil { return err }
+
+  body, err := resolver.ResolveParam("body", t.Parameters, ctx, infra_outputs)
+  if err != nil { return err }
+
+  recipient, err := resolver.ResolveParam("recipient", t.Parameters, ctx, infra_outputs)
+  if err != nil { return err } 
+
   e := email.NewEmail()
   e.From = username
   e.To = []string{recipient}

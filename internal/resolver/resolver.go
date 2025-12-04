@@ -47,3 +47,9 @@ func ResolveString(s string, ctx *structures.Context, infra_outputs *map[string]
   return result, nil
 }
 
+func ResolveParam(key string, params map[string]string, ctx *structures.Context, infra *map[string]map[string]string, ) (string, error) {
+
+    v, err := ResolveString(params[key], ctx, infra)
+    return v, err
+}
+

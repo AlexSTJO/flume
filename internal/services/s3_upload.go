@@ -104,5 +104,9 @@ func (s S3UploadService) Run(t structures.Task, n string, ctx *structures.Contex
 }
 
 func init() {
-  structures.Registry["s3_upload"] = S3UploadService{}
+  s3_upload, err := NewS3SyncService()
+  if err != nil {
+    fmt.Println("Error Registering S3 Service")
+  }
+  structures.Registry["s3_upload"] = s3_upload
 }

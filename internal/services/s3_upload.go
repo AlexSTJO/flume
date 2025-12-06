@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strings"
   "os"
-  "io"
 
 	"github.com/AlexSTJO/flume/internal/logging"
 	"github.com/AlexSTJO/flume/internal/resolver"
@@ -41,13 +40,19 @@ func NewS3SyncService() (*S3UploadService, error) {
 }
 
 func (s S3UploadService) Run(t structures.Task, n string, ctx *structures.Context, infra_outputs *map[string]map[string]string, l*logging.Config) error {
-  bucket, err := resolver.ResolveParam("bucket", t.Parameters, ctx , infra_outputs ) 
+  raw_bucket, err := t.StringParam("bucket")
+  if err != nil {return err}
+  bucket, err := resolver.ResolveStringParam(raw_bucket, ctx , infra_outputs ) 
   if err != nil { return err }
-
-  source, err := resolver.ResolveParam("source", t.Parameters, ctx, infra_outputs )
+  
+  raw_source, err := t.StringParam("source")
+  if err != nil {return err}
+  source, err := resolver.ResolveStringParam(raw_source, ctx, infra_outputs )
   if err != nil { return err }
-
-  prefix, err := resolver.ResolveParam("prefix", t.Parameters, ctx, infra_outputs)
+  
+  raw_prefix, err := t.StringParam("prefix")
+  if err != nil { return err}
+  prefix, err := resolver.ResolveStringParam(raw_prefix, ctx, infra_outputs)
   if err != nil { return err }
 
 

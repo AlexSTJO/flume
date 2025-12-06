@@ -47,9 +47,38 @@ func ResolveString(s string, ctx *structures.Context, infra_outputs *map[string]
   return result, nil
 }
 
-func ResolveParam(key string, params map[string]string, ctx *structures.Context, infra *map[string]map[string]string, ) (string, error) {
-
-    v, err := ResolveString(params[key], ctx, infra)
+func ResolveStringParam(v string, ctx *structures.Context, infra *map[string]map[string]string, ) (string, error) {
+    v, err := ResolveString(v, ctx, infra)
     return v, err
+}
+
+func ResolveAny(v any, ctx *structures.Context, infra *map[string]map[string]string, ) (any, error) {
+  switch typed := v.(type) {
+  case string:
+    return ResolveString(typed, ctx, infra)
+  
+  case map[string]any:
+    out := make(map[string]any, len(typed))
+    for k, val := range typed  {
+      rv, err := ResolveAny(val, ctx, infra)
+      if err != nil {
+        return nil, err
+      }
+      out[k] = rv
+    }
+    return out, nil
+  case [] any:
+    out := make([]any, len(typed))
+    for i, val := range typed {
+      rv, err := ResolveAny(val,ctx,infra)
+      if err != nil {
+        return nil, err
+      }
+      out[i] =  rv
+    }
+    return out, nil
+  default:
+    return v, nil
+  }
 }
 

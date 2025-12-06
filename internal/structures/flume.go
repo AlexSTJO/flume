@@ -19,7 +19,7 @@ type Task struct {
   Version int `yaml:"version"`
   Service string `yaml:"service"`
   Dependencies []string `yaml:"dependencies"`
-  Parameters map[string]string `yaml:"parameters"`
+  Parameters map[string]any `yaml:"parameters"`
   Resources []string `yaml:"resources,omitempty"`
 }
 
@@ -78,6 +78,20 @@ func validateTasks(t map[string]Task) error{
       }
 
   return nil
+}
+
+func (t Task) StringParam(key string) (string, error) {
+    v, ok := t.Parameters[key]
+    if !ok {
+        return "", fmt.Errorf("missing parameter %q", key)
+    }
+
+    s, ok := v.(string)
+    if !ok {
+        return "", fmt.Errorf("parameter %q must be string, got %T", key, v)
+    }
+
+    return s, nil
 }
 
 

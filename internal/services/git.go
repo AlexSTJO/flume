@@ -48,8 +48,10 @@ func (s GitService) Run(t structures.Task, n string, ctx *structures.Context, in
     }
   } else {
     l.InfoLogger(fmt.Sprintf("Cloning into %s", repo_folder))
-    cmd := exec.Command("git", "clone", t.Parameters["repo_url"], repo_folder)
-    _, err := cmd.CombinedOutput()
+    repo_url, err := t.StringParam("repo_url")
+    if err != nil { return err } 
+    cmd := exec.Command("git", "clone", repo_url, repo_folder)
+    _, err = cmd.CombinedOutput()
     if err != nil {
       return fmt.Errorf("Error cloning repo: %w", err)
     } 

@@ -24,7 +24,9 @@ func (s ShellService) Parameters() []string {
 
 func (s ShellService) Run(t structures.Task, n string,  ctx *structures.Context, infra_outputs *map[string]map[string]string, l *logging.Config) error {       
   rContext := make(map[string]string, 2)
-  command, err := resolver.ResolveParam("command", t.Parameters, ctx, infra_outputs) 
+  raw_command, err := t.StringParam("command")
+  if err != nil { return err }
+  command, err := resolver.ResolveStringParam(raw_command, ctx, infra_outputs) 
   if err != nil {
     rContext["success"] = "false"
     ctx.SetEventValues(n,rContext)

@@ -24,6 +24,11 @@ func (s JsonWriterService) Parameters() []string {
 }
 
 func (s JsonWriterService) Run(t structures.Task, n string, ctx *structures.Context, infra_outputs *map[string]map[string]string, l*logging.Config) error{
+  runCtx := make(map[string]string, 1)
+  defer ctx.SetEventValues(n, runCtx)
+  runCtx["success"] = "false"
+  
+
   flume_info := ctx.GetEventValues("flume_info")
   flume_folder := flume_info["path"]
   json_file := filepath.Join(flume_folder, n, "meta.json")
@@ -58,7 +63,7 @@ func (s JsonWriterService) Run(t structures.Task, n string, ctx *structures.Cont
   }
 
   run_ctx["json_path"] = json_file
-  ctx.SetEventValues(n, run_ctx)
+  run_ctx["success"] = "true"
 
   return nil
 

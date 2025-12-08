@@ -32,10 +32,8 @@ func (s ShellService) Run(t structures.Task, n string,  ctx *structures.Context,
     ctx.SetEventValues(n,rContext)
     return err
   }
-
-  fmt.Println(command)
-
   cmd := exec.Command("sh", "-c", command)
+
 
   var outBuf, errBuf bytes.Buffer
   

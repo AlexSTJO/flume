@@ -70,7 +70,7 @@ func runPipeline(w http.ResponseWriter, r *http.Request) {
     return
   }
   if err = e.Start(); err != nil {
-    http.Error(w, "Engine Run Failute: " + err.Error(), http.StatusBadRequest)
+    http.Error(w, "Engine Run Failure: " + err.Error(), http.StatusBadRequest)
     return
   }
 }

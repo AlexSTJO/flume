@@ -66,7 +66,7 @@ func validateTasks(t map[string]Task) error{
     } 
 
     if len(task.Parameters) != len(s.Parameters()) {
-      return fmt.Errorf("Extra Parameters in Task")
+      return fmt.Errorf("Extra Parameters in Task: %s", task.Service)
     }
 
     for _, p := range(s.Parameters()) {

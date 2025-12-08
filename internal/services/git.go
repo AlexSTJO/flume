@@ -27,12 +27,11 @@ func (s GitService) Run(t structures.Task, n string, ctx *structures.Context, in
   flume_info := ctx.GetEventValues("flume_info")
   flume_folder := flume_info["path"]
   repo_folder := filepath.Join(flume_folder, n)
-  runCtx := make(map[string]string, 1)
+  runCtx := make(map[string]string, 2)
   defer ctx.SetEventValues(n, runCtx)
   runCtx["success"] = "false"
   
   
-  run_ctx := make(map[string]string, 2)
   exists := true
   _, err := os.Stat(repo_folder)
   if err != nil {
@@ -60,8 +59,8 @@ func (s GitService) Run(t structures.Task, n string, ctx *structures.Context, in
       return fmt.Errorf("Error cloning repo: %w", err)
     } 
   } 
-  run_ctx["success"] = "true"
-  run_ctx["repo_folder"] = repo_folder
+  runCtx["success"] = "true"
+  runCtx["repo_folder"] = repo_folder
   return nil
 }
 

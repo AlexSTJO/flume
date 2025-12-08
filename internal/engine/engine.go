@@ -65,6 +65,7 @@ func (e *Engine) Start() error {
   infra_outputs, err := infra.Deploy(e.Flume.Infrastructure, &logger)
   if err != nil {
     logger.ErrorLogger(err)
+    return err
   }
 
 

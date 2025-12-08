@@ -33,7 +33,6 @@ func (s JsonWriterService) Run(t structures.Task, n string, ctx *structures.Cont
   flume_folder := flume_info["path"]
   json_file := filepath.Join(flume_folder, n, "meta.json")
   
-  run_ctx := make(map[string]string, 1)
 
   payload := make(map[string]any)
   data, ok := t.Parameters["data"].(map[string]any)
@@ -62,8 +61,8 @@ func (s JsonWriterService) Run(t structures.Task, n string, ctx *structures.Cont
     return fmt.Errorf("encoding json: %w", err)
   }
 
-  run_ctx["json_path"] = json_file
-  run_ctx["success"] = "true"
+  runCtx["json_path"] = filepath.Dir(json_file)
+  runCtx["success"] = "true"
 
   return nil
 

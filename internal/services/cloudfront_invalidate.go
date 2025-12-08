@@ -51,8 +51,19 @@ func (s CloudfrontInvalidateService) Run(t structures.Task, n string, ctx *struc
   raw_paths, err := resolver.ResolveAny(t.Parameters["paths"], ctx, infra_outputs)
   if err != nil {return err}
 
-  paths, ok := raw_paths.([]string)
-  if !ok { return fmt.Errorf("Paramater 'paths' has to be a list") }
+  rawList, ok := raw_paths.([]any)
+  if !ok {
+      return fmt.Errorf("Parameter 'paths' has to be a list")
+  }
+
+  paths := make([]string, len(rawList))
+  for i, v := range rawList {
+      s, ok := v.(string)
+      if !ok {
+          return fmt.Errorf("all paths must be strings, got %T", v)
+      }
+      paths[i] = s
+  }
   awsCtx := context.Background()
 
   callerRef := fmt.Sprintf("flume-%d", time.Now().UnixNano())

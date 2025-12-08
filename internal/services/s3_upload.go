@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
   "os"
+  "mime"
 
 	"github.com/AlexSTJO/flume/internal/logging"
 	"github.com/AlexSTJO/flume/internal/resolver"
@@ -43,6 +44,7 @@ func (s S3UploadService) Run(t structures.Task, n string, ctx *structures.Contex
   runCtx := make(map[string]string, 1)
   defer ctx.SetEventValues(n, runCtx)
   runCtx["success"] = "false"
+  
 
   raw_bucket, err := t.StringParam("bucket")
   if err != nil {return err}
@@ -58,6 +60,8 @@ func (s S3UploadService) Run(t structures.Task, n string, ctx *structures.Contex
   if err != nil { return err}
   prefix, err := resolver.ResolveStringParam(raw_prefix, ctx, infra_outputs)
   if err != nil { return err }
+
+  l.InfoLogger(fmt.Sprintf("Uploading contents of '%s' to bucket: '%s' with prefix of '%s'", source, bucket, prefix))
 
   awsCtx := context.Background()
 
@@ -85,16 +89,21 @@ func (s S3UploadService) Run(t structures.Task, n string, ctx *structures.Contex
         return fmt.Errorf("open %s: %w", path, err)
     }
     defer f.Close()
+    ext := strings.ToLower(filepath.Ext(key))
+    contentType := mime.TypeByExtension(ext)
+    if contentType == "" {
+        contentType = "application/octet-stream"
+    }
     _, err = s.client.PutObject(awsCtx, &s3.PutObjectInput{
       Bucket: aws.String(bucket),
       Key:    aws.String(key),
       Body:   f,
+      ContentType: aws.String(contentType),
     }) 
     if err != nil {
       return fmt.Errorf("put %s: %w", key, err)
     }
 
-    l.InfoLogger(fmt.Sprintf("Uploaded %s -> s3://%s/%s", path, bucket, key))
     return nil
   })
   if err != nil {

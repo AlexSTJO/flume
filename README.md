@@ -24,19 +24,62 @@ With more to come...
 
 ---
 
-## **Installation**
+## Getting Started
+
+### Prerequisites
+
+- Go (1.22+ recommended)
+- Terraform (if using the `terraform` service)
+- AWS credentials configured (if using AWS services)
+- `.env` file for server configuration
+
+### Configuration
+
+Flume reads its server configuration from a `.env` file in the project root.
+
+Example:
+
+```env
+URL=localhost
+PORT=8080
+```
+
+Flume will use these values to construct its server address as:
+
+```text
+http://$URL:$PORT
+```
+
+---
+
+## Installation
+
+Clone the repository and run Flume directly with Go:
 
 ```bash
 git clone https://github.com/AlexSTJO/flume.git
 cd flume
-go build -o flume
+go run .
 ```
 
-Run a pipeline:
+Flume will start the HTTP server using the URL and PORT defined in your `.env` file.
+
+---
+
+## Triggering a Pipeline via API
+
+Pipelines are defined in YAML and referenced by name. To trigger a pipeline, send an HTTP POST request to the `/run` endpoint of the Flume server.
+
+Example using `curl`:
 
 ```bash
-./flume run pipeline.yaml
+curl -X POST "http://$URL:$PORT/run"   -H "Content-Type: application/json"   -d '{"pipeline": "sample-flume"}'
 ```
+
+Where:
+
+- `$URL` and `$PORT` come from your `.env` file  
+- `pipeline` is the name of the pipeline (e.g., `sample-flume`)
 
 ---
 

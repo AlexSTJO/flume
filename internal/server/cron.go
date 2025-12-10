@@ -22,27 +22,20 @@ type CronManager struct {
 }
 
 func CronInit() (*CronManager, error) {
-  err := godotenv.Load()
-  if err != nil {
-    return nil, err
-  }
+  _ = godotenv.Load()
   port := os.Getenv("PORT")
   url := os.Getenv("URL")
 
   requestUrl := fmt.Sprintf("http://%s:%s/run", url, port) 
   fmt.Println(requestUrl)
-  home, err := os.UserHomeDir()
-  if err != nil {
-    return nil, err
-  }
-
+ 
   c := cron.New()
   
-  root := filepath.Join(home, ".flume")
+  root := filepath.Join(".", ".flume")
   cronIDs := make(map[string]cron.EntryID)
   root = filepath.Clean(root)
   rootDepth := strings.Count(root, string(os.PathSeparator))
-  err = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+  err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
     if d.IsDir() {
         depth := strings.Count(path, string(os.PathSeparator))
         if depth > rootDepth+1 {

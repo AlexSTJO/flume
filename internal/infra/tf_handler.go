@@ -9,6 +9,8 @@ import (
   "github.com/AlexSTJO/flume/internal/logging"
 	"github.com/AlexSTJO/flume/internal/structures"
   "errors"
+  "path"
+  "strings"
 )
 
 
@@ -46,21 +48,27 @@ func (t *Terraform) Name() string {
 }
 
 func (t *Terraform) Call(d structures.Deployment, l *logging.Config) (map[string]string, error) {
+  l.InfoLogger(fmt.Sprintf("Pulling Terraform Remote Repo: %s", d.Repo))
+  key, err := TerraformPull(d.Repo)
+  if err != nil {
+    return nil, fmt.Errorf("Error pulling terraform repo: %w", err)
+  }
+
   switch d.Action {
   case "sync": {
-    if err := TerraformInit(d.Key); err !=nil {
+    if err := TerraformInit(key); err !=nil {
       return nil, fmt.Errorf("Terraform Init Failed: %w", err)
     }
     l.InfoLogger("Terraform Initialization Succesful")
 
-    changes, err := TerraformPlan(d.Key, d.VarFile)
+    changes, err := TerraformPlan(key, d.VarFile)
     if err != nil{
       return nil, fmt.Errorf("Terraform Plan Failed: %w", err)
     }
 
     if changes{
       l.InfoLogger("Changes can be made. Running Apply")
-      err := TerraformApply(d.Key, d.VarFile)
+      err := TerraformApply(key, d.VarFile)
       if err != nil {
         l.ErrorLogger(fmt.Errorf("Error Applying Terraform Deployment"))
         return nil, err
@@ -74,7 +82,7 @@ func (t *Terraform) Call(d structures.Deployment, l *logging.Config) (map[string
   default:
     return nil, fmt.Errorf("Unknown Action: %s", d.Action)
   }
-  tf_outputs, err := TerraformOutputs(d.Key)
+  tf_outputs, err := TerraformOutputs(key)
   if err != nil{
     l.ErrorLogger(fmt.Errorf("Error Parsing Terraform Outputs"))
   }
@@ -84,12 +92,7 @@ func (t *Terraform) Call(d structures.Deployment, l *logging.Config) (map[string
 
 func TerraformState(key string) (*State, error) {
   cmd := exec.Command("terraform", "state", "pull")
-  home, err := os.UserHomeDir()
-  if err != nil {
-    return nil, err  
-  }
-
-  dir := filepath.Join(home, key)
+  dir := filepath.Join(".", "terraform", key)
   cmd.Dir = dir
 
   out, err := cmd.Output()
@@ -99,17 +102,48 @@ func TerraformState(key string) (*State, error) {
   return ParseState(out)
 }
 
+func TerraformPull(repo string) (string, error) {
+  clean := strings.TrimSuffix(repo, ".git")
+  name := path.Base(clean)
+
+  repo_folder := filepath.Join(".", "terraform", name) 
+
+  _ = os.MkdirAll(filepath.Join(".", "terraform"), 0755)
+  
+  
+  exists := true
+  _, err := os.Stat(repo_folder)
+  if err != nil {
+    if os.IsNotExist(err) {
+      exists = false
+    } else {
+      return "", fmt.Errorf("Error checking git repo: %w", err)
+    }
+  }
+  if exists { 
+    cmd := exec.Command("git", "pull")
+    cmd.Dir = repo_folder
+    if err := cmd.Run(); err != nil {
+      return "", fmt.Errorf("Error pulling terraform repo from existing folder: %w", err)
+    }
+  } else { 
+    cmd := exec.Command("git", "clone", repo, repo_folder)
+    _, err = cmd.CombinedOutput()
+    if err != nil {
+      return "", fmt.Errorf("Error cloning repo: %w", err)
+    } 
+  }
+  
+  return name, nil
+}
+
 func TerraformInit(key string) error {
   cmd := exec.Command("terraform", "init", "-input=false", "-no-color")
-  home, err := os.UserHomeDir()
-  if err != nil {
-    return err
-  }
-
-  cmd.Dir = filepath.Join(home, key)
+ 
+  cmd.Dir = filepath.Join(".", "terraform", key)
   cmd.Env = append(os.Environ(), "TF_IN_AUTOMATION=1")
 
-  _, err = cmd.CombinedOutput()
+  _, err := cmd.CombinedOutput()
 
   if err != nil {
     return fmt.Errorf("terraform_init failed: %w", err)
@@ -119,17 +153,12 @@ func TerraformInit(key string) error {
 }
 
 
-func TerraformPlan(key string, var_file string) (bool, error) {
-  home, err := os.UserHomeDir()
-  if err != nil {
-    return false, err
-  }
-  
+func TerraformPlan(key string, var_file string) (bool, error) {   
   cmd := exec.Command("terraform", "plan", "-detailed-exitcode", "-input=false", "-var-file="+var_file, "-no-color")
-  cmd.Dir = filepath.Join(home, key)
+  cmd.Dir = filepath.Join(".", "terraform", key)
   cmd.Env = append(os.Environ(), "TF_IN_AUTOMATION=1")
 
-  _, err = cmd.CombinedOutput()
+  _, err := cmd.CombinedOutput()
 
   if err == nil {
     return false, nil
@@ -157,14 +186,10 @@ func ParseState(data []byte) (*State, error) {
 }
 
 func TerraformApply(key string, var_file string) (error) {
-  home, err := os.UserHomeDir()
-  if err != nil {
-    return err
-  }
   cmd := exec.Command("terraform", "apply", "-auto-approve", "-input=false", "-var-file="+var_file)
-  cmd.Dir = filepath.Join(home, key)
+  cmd.Dir = filepath.Join(".", "terraform", key)
   
-  _, err = cmd.CombinedOutput() // stdout + stderr together
+  _, err := cmd.CombinedOutput() // stdout + stderr together
 
 	if err != nil {
 		return fmt.Errorf(
@@ -173,13 +198,9 @@ func TerraformApply(key string, var_file string) (error) {
   return nil
 }
 
-func TerraformOutputs(key string) (map[string]string, error) {
-  home, err := os.UserHomeDir()
-  if err != nil {
-    return nil, err
-  }
+func TerraformOutputs(key string) (map[string]string, error) { 
   cmd := exec.Command("terraform", "output", "-json")
-  cmd.Dir = filepath.Join(home, key)
+  cmd.Dir = filepath.Join(".", "terraform", key)
 
   out, err := cmd.CombinedOutput()
   if err != nil {

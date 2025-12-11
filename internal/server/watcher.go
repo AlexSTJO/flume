@@ -3,7 +3,6 @@ package server
 import (
 	"fmt"
 	"io/fs"
-	"os"
 	"path/filepath"
 
 
@@ -21,11 +20,7 @@ func FileWatcher(c *CronManager) error {
   defer w.Close()
 
   go watchLoop(w, c)
-  home, err := os.UserHomeDir()
-  if err != nil {
-    return fmt.Errorf("Error finding home directory: %w", err)
-  }
-  filepath := filepath.Join(home,  ".flume")
+    filepath := filepath.Join(".",  ".flume")
   if err = w.Add(filepath); err != nil {
     return fmt.Errorf("Error adding directory to watcher: %w", err)
   }

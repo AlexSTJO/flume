@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"path/filepath"
 
 	"github.com/AlexSTJO/flume/internal/engine"
@@ -51,13 +50,9 @@ func runPipeline(w http.ResponseWriter, r *http.Request) {
     return
   }
   
-  home, err := os.UserHomeDir()
-  if err != nil {
-    http.Error(w, "failed to get home directory: "+err.Error(), http.StatusBadRequest)
-    return
-  }
+  
 
-  filepath := filepath.Join(home, ".flume", req.Pipeline, req.Pipeline+".yaml" )
+  filepath := filepath.Join(".", ".flume", req.Pipeline, req.Pipeline+".yaml" )
   p, err := structures.Initialize(filepath)
   if err != nil {
     http.Error(w, "Pipeline Initalization Failure:" + err.Error(), http.StatusBadRequest)

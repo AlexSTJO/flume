@@ -33,7 +33,7 @@ type TriggerSpec struct {
 type Deployment struct {
   Service string `yaml:"service"`
   Action string `yaml:"action"`
-  Key string `yaml:"key"`
+  Repo string `yaml:"repo"`
   VarFile string `yaml:"var-file,omitempty"`
 }
   

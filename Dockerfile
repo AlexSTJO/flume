@@ -12,7 +12,21 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o flume .
 
 FROM alpine:3.19
 
-RUN apk add --no-cache ca-certificates
+
+RUN apk add --no-cache \
+    ca-certificates \
+    git \
+    openssh \
+    curl \
+    unzip \
+    nodejs \
+    npm
+
+RUN curl -fsSL https://releases.hashicorp.com/terraform/1.8.5/terraform_1.8.5_linux_amd64.zip -o terraform.zip \
+    && unzip terraform.zip \
+    && mv terraform /usr/local/bin/terraform \
+    && chmod +x /usr/local/bin/terraform \
+    && rm terraform.zip
 
 WORKDIR /app
 

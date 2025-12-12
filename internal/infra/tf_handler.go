@@ -8,6 +8,7 @@ import (
 	"path/filepath"
   "github.com/AlexSTJO/flume/internal/logging"
 	"github.com/AlexSTJO/flume/internal/structures"
+  "github.com/AlexSTJO/flume/internal/utils"
   "errors"
   "path"
   "strings"
@@ -49,7 +50,7 @@ func (t *Terraform) Name() string {
 
 func (t *Terraform) Call(d structures.Deployment, l *logging.Config) (map[string]string, error) {
   l.InfoLogger(fmt.Sprintf("Pulling Terraform Remote Repo: %s", d.Repo))
-  key, err := TerraformPull(d.Repo)
+  key, err := TerraformPull(d.Repo, l)
   if err != nil {
     return nil, fmt.Errorf("Error pulling terraform repo: %w", err)
   }
@@ -102,17 +103,50 @@ func TerraformState(key string) (*State, error) {
   return ParseState(out)
 }
 
-func TerraformPull(repo string) (string, error) {
+func TerraformPull(repo string, l *logging.Config) (string, error) {
   clean := strings.TrimSuffix(repo, ".git")
   name := path.Base(clean)
 
   repo_folder := filepath.Join(".", "terraform", name) 
 
   _ = os.MkdirAll(filepath.Join(".", "terraform"), 0755)
-  
-  
+
+   
+  keyDir := filepath.Join("terraform", ".keys", name)
+  b, err := utils.KeyExists(keyDir)
+  if err != nil {
+    return "", fmt.Errorf("checking key existence: %w", err)
+  }
+
+  if !b {
+    if err := utils.GenerateDeployKey(keyDir); err != nil{
+      return "", fmt.Errorf("generating deploy key: %w", err)
+    }
+    s, err := utils.ReadKey(keyDir)
+    if err != nil {
+      return "", fmt.Errorf("error reading key: %w", err)
+    }
+    l.InfoLogger(fmt.Sprintf("Deploy key generated for '%s': %s",repo, s))
+    l.InfoLogger("To add key -> Log into GitHub Repo -> Settings -> Deploy Keys -> Add Deploy Key")   
+  }
+
+  if b := utils.HasRepoAccess(repo, keyDir); !b {
+    l.ErrorLogger(fmt.Errorf("deploy key for '%s' does not have repo access", repo))
+    s, err := utils.ReadKey(keyDir)
+    if err != nil {
+      return "", fmt.Errorf("error reading key: %w", err)
+    }
+    l.InfoLogger(fmt.Sprintf("Key: %s", s))
+    l.InfoLogger("To add key -> Log into GitHub Repo -> Settings -> Deploy Keys -> Add Deploy Key") 
+    return "", fmt.Errorf("git error")
+  }
+
+  private_key_path := filepath.Join(keyDir, "id_ed25519")
+  ssh_env := "GIT_SSH_COMMAND=ssh -i "+private_key_path+" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+
+ 
   exists := true
-  _, err := os.Stat(repo_folder)
+  _, err = os.Stat(repo_folder)
   if err != nil {
     if os.IsNotExist(err) {
       exists = false
@@ -123,11 +157,13 @@ func TerraformPull(repo string) (string, error) {
   if exists { 
     cmd := exec.Command("git", "pull")
     cmd.Dir = repo_folder
+    cmd.Env = append(os.Environ(), ssh_env)
     if err := cmd.Run(); err != nil {
       return "", fmt.Errorf("Error pulling terraform repo from existing folder: %w", err)
     }
   } else { 
     cmd := exec.Command("git", "clone", repo, repo_folder)
+    cmd.Env = append(os.Environ(), ssh_env)
     _, err = cmd.CombinedOutput()
     if err != nil {
       return "", fmt.Errorf("Error cloning repo: %w", err)

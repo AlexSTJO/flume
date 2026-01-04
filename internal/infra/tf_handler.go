@@ -142,7 +142,10 @@ func TerraformPull(repo string, l *logging.Config) (string, error) {
   }
 
   private_key_path := filepath.Join(keyDir, "id_ed25519")
-  ssh_env := "GIT_SSH_COMMAND=ssh -i "+private_key_path+" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+  ssh_env := fmt.Sprintf(
+    `GIT_SSH_COMMAND=ssh -i %q -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new`,
+    private_key_path,
+  )
 
  
   exists := true
@@ -155,10 +158,12 @@ func TerraformPull(repo string, l *logging.Config) (string, error) {
     }
   }
   if exists { 
-    cmd := exec.Command("git", "pull")
+    cmd := exec.Command("git", "pull", "--ff-only")
     cmd.Dir = repo_folder
     cmd.Env = append(os.Environ(), ssh_env)
-    if err := cmd.Run(); err != nil {
+    out, err := cmd.CombinedOutput()
+    fmt.Println(string(out))
+    if err != nil {
       return "", fmt.Errorf("Error pulling terraform repo from existing folder: %w", err)
     }
   } else { 

@@ -79,7 +79,7 @@ func (s GitService) Run(t structures.Task, n string, ctx *structures.Context, in
 
   if exists {
     l.InfoLogger("Updating Git Repo")
-    cmd := exec.Command("git", "pull")
+    cmd := exec.Command("git", "pull", "--ff-only")
     cmd.Env = append(os.Environ(), ssh_env)
     cmd.Dir = repo_folder
     if err := cmd.Run(); err != nil {

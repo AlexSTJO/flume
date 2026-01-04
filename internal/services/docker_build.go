@@ -3,10 +3,12 @@ package services
 import (
 	"fmt"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/AlexSTJO/flume/internal/logging"
 	"github.com/AlexSTJO/flume/internal/resolver"
 	"github.com/AlexSTJO/flume/internal/structures"
+	"github.com/AlexSTJO/flume/internal/utils"
 )
 type DockerBuildService struct {
 }
@@ -16,7 +18,7 @@ func (s DockerBuildService) Name() string {
 }
 
 func (s DockerBuildService) Parameters() []string {
-	return []string{"build_path", "image_name", "tag", "build_args"}
+	return []string{"build_path", "image_name", "tag", "attachments", "build_args"}
 }
 
 func (s DockerBuildService) Run(t structures.Task, n string, ctx *structures.Context, infra_outputs *map[string]map[string]string, l*logging.Config) error{
@@ -28,6 +30,14 @@ func (s DockerBuildService) Run(t structures.Task, n string, ctx *structures.Con
   build_path, err := resolver.ResolveStringParam(raw_build_path, ctx, infra_outputs)
   if err != nil { return err }
 
+  raw_attachments := t.Parameters["attachments"]
+  resolved, err := resolver.ResolveAny(raw_attachments, ctx, infra_outputs)
+  if err != nil { return err }
+  
+  attachments, err := resolver.ToStringSlice(resolved)  
+  if err != nil {
+    return err
+  }
   raw_image_name, err := t.StringParam("image_name")
   if err != nil { return err}
   image_name, err := resolver.ResolveString(raw_image_name, ctx, infra_outputs)
@@ -44,10 +54,20 @@ func (s DockerBuildService) Run(t structures.Task, n string, ctx *structures.Con
     if err != nil {
       return err
     }
-    f_build_args, ok := a_build_args.(map[string]string)
+    t_build_args, ok := a_build_args.(map[string]string)
     if !ok { return fmt.Errorf("build args must be key value pairs")}
-    build_args = f_build_args
+    build_args = t_build_args
   }
+
+
+  for _,v := range(attachments) {
+    name := filepath.Base(filepath.Clean(v))
+    if err := utils.CopyDir(v, filepath.Join(build_path, name)); err != nil {
+      return err
+    }
+    
+  }
+  
 
   imageRef := fmt.Sprintf("%s:%s", image_name, tag)
 

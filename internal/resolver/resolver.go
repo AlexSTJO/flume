@@ -82,3 +82,25 @@ func ResolveAny(v any, ctx *structures.Context, infra *map[string]map[string]str
   }
 }
 
+func ToStringSlice(v any) ([]string, error) {
+    switch t := v.(type) {
+    case []string:
+        return t, nil
+
+    case []any:
+        out := make([]string, 0, len(t))
+        for i, val := range t {
+            s, ok := val.(string)
+            if !ok {
+                return nil, fmt.Errorf("attachments[%d] must be a string", i)
+            }
+            out = append(out, s)
+        }
+        return out, nil
+
+    default:
+        return nil, fmt.Errorf("attachments must be an array of strings")
+    }
+}
+
+

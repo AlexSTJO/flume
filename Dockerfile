@@ -31,7 +31,7 @@ RUN curl -fsSL https://releases.hashicorp.com/terraform/1.8.5/terraform_1.8.5_li
 WORKDIR /app
 
 COPY --from=builder /app/flume .
-COPY --from=builder /app/.flume /app/.flume
+RUN mkdir -p /app/.flume
 
 EXPOSE 8080
 

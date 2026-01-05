@@ -159,7 +159,6 @@ func TerraformPull(repo string, l *logging.Config) (string, error) {
   }
   if exists { 
     cmd := exec.Command("git", "pull", "--ff-only")
-    cmd.Dir = repo_folder
     cmd.Env = append(os.Environ(), ssh_env)
     out, err := cmd.CombinedOutput()
     fmt.Println(string(out))

@@ -18,8 +18,6 @@ func ResolveString(s string, ctx *structures.Context, infra_outputs *map[string]
     key := strings.TrimSpace(m[2:len(m) -1])
     
     parts := strings.SplitN(key, ":" , 2)
-    // context:build.status
-    // env:dbname
     switch parts[0] {
       case "context": {
         keys := strings.SplitN(parts[1], ".", 2)

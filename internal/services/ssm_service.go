@@ -24,7 +24,7 @@ func (s SSMService) Name() string{
 }
 
 func (s SSMService) Parameters() []string{
-  return []string{"instance_id", "command"}
+  return []string{"instance_id", "commands"}
 }
 
 func NewSSMService() (*SSMService, error) {
@@ -139,4 +139,12 @@ func deref(p *string) string {
 		return ""
 	}
 	return *p
+}
+
+func init() {
+  ssm, err := NewSSMService()
+  if err != nil {
+    fmt.Printf("Error registering ssm service: %w\n", err)
+  }
+  structures.Registry["ssm"] = ssm
 }

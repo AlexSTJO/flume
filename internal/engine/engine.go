@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"runtime"
 	"sync"
-	"time"
   "path/filepath"
 
 	"github.com/AlexSTJO/flume/internal/infra"
@@ -17,16 +16,16 @@ import (
 
 type Engine struct{
   FlumeName string
-  RunID string
+  RunInfo *structures.RunInfo
   Flume *structures.Pipeline
   LogPath string
   Context *structures.Context
 }
 
-func Build(p *structures.Pipeline) (*Engine, error) {  
+func Build(p *structures.Pipeline, r *structures.RunInfo) (*Engine, error) {  
   e := &Engine {
     FlumeName: p.Name,
-    RunID: fmt.Sprintf("%d", time.Now().UnixNano()),
+    RunInfo: r,
     Flume: p,
     LogPath: p.LogPath,
     Context: structures.NewContext(),
@@ -43,7 +42,7 @@ func (e *Engine) Start() error {
   
   
   fmt.Printf("%s %s\n", label("Flume:"), value(e.FlumeName))
-  fmt.Printf("%s %s\n", label("ID:"), value(e.RunID))
+  fmt.Printf("%s %s\n", label("ID:"), value(e.RunInfo.RunID))
 
   if e.LogPath != "" {
     fmt.Printf("%s %s\n", label("Logs:"), value(e.LogPath))

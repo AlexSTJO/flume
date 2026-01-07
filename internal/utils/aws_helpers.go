@@ -19,3 +19,5 @@ func AccountAndRegion(ctx context.Context, cfg aws.Config) (string, string, erro
 
 	return *id.Account, cfg.Region, nil
 }
+
+

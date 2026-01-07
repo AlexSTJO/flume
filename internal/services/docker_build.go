@@ -90,8 +90,6 @@ func (s DockerBuildService) Run(t structures.Task, n string, ctx *structures.Con
   cmd := exec.Command("docker", args...)
   cmd.Dir = build_path
 
-  fmt.Println(args)
-
   o, err := cmd.CombinedOutput()
   l.ShellLogger(string(o))
   if err != nil {

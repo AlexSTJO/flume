@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/text/message/pipeline"
 )
 
 func newID() string {
@@ -35,15 +34,17 @@ type RemotePipeline struct {
 func GenerateRunInfo(fileRef string) (*RunInfo, error){
   remote := false
   pipeline := ""
-  var remote_pipeline *RemotePipeline
+  var remote_pipeline RemotePipeline
   if strings.HasPrefix(fileRef, "s3://") {
 		remote = true
     path := strings.TrimPrefix(fileRef, "s3://")
 
     parts := strings.SplitN(path, "/", 2)
-    if len(parts) == 2 {
+    if len(parts) != 2 {
       return nil, fmt.Errorf("Invalid s3 uri: %s", fileRef)
     }
+
+    fmt.Println(parts)
 
     remote_pipeline.Bucket = parts[0]
     remote_pipeline.Key = parts[1]
@@ -54,6 +55,7 @@ func GenerateRunInfo(fileRef string) (*RunInfo, error){
 
     pipeline = segments[1]
 	} else {
+    fmt.Println("hey")
     raw_fileRef := strings.TrimSuffix(fileRef, ".yaml")
     pipeline = strings.TrimPrefix(raw_fileRef, "local://")
   } 
@@ -63,6 +65,6 @@ func GenerateRunInfo(fileRef string) (*RunInfo, error){
     Pipeline: pipeline,
     Remote: remote,
     FileRef: fileRef,
-    S3: remote_pipeline,
+    S3: &remote_pipeline,
   }, nil
 }

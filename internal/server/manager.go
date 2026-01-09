@@ -60,7 +60,8 @@ func runPipeline(w http.ResponseWriter, r *http.Request) {
 
   run_info, err := structures.GenerateRunInfo(req.PipelineRef)
   if err != nil {
-    http.Error(w, "Error Geerating Run Info" + err.Error(), http.StatusBadRequest)
+    http.Error(w, "Error Geerating Run Info: " + err.Error(), http.StatusBadRequest)
+    return
   }
 
   path := filepath.Join(".", ".flume", run_info.Pipeline, run_info.Pipeline + "yaml")

@@ -4,9 +4,9 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"os"
 	"strings"
 	"time"
-
 )
 
 func newID() string {
@@ -20,6 +20,7 @@ func newID() string {
 
 type RunInfo struct{
   RunID string
+  RunDir string
   Pipeline string
   Remote bool
   FileRef string
@@ -44,7 +45,6 @@ func GenerateRunInfo(fileRef string) (*RunInfo, error){
       return nil, fmt.Errorf("Invalid s3 uri: %s", fileRef)
     }
 
-    fmt.Println(parts)
 
     remote_pipeline.Bucket = parts[0]
     remote_pipeline.Key = parts[1]
@@ -59,9 +59,14 @@ func GenerateRunInfo(fileRef string) (*RunInfo, error){
     raw_fileRef := strings.TrimSuffix(fileRef, ".yaml")
     pipeline = strings.TrimPrefix(raw_fileRef, "local://")
   } 
-
+  run_id := newID()
+  run_dir, err := os.MkdirTemp("", fmt.Sprintf("flume-run-%s", run_id))
+  if err != nil {
+    return nil, fmt.Errorf("Couldnt make tmp run directory: %w", err)
+  }
   return &RunInfo{
-    RunID: newID(),
+    RunID: run_id,
+    RunDir: run_dir,
     Pipeline: pipeline,
     Remote: remote,
     FileRef: fileRef,

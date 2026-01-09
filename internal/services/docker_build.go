@@ -21,7 +21,7 @@ func (s DockerBuildService) Parameters() []string {
 	return []string{"build_path", "image_name", "tag", "attachments", "build_args"}
 }
 
-func (s DockerBuildService) Run(t structures.Task, n string, ctx *structures.Context, infra_outputs *map[string]map[string]string, l*logging.Config) error{
+func (s DockerBuildService) Run(t structures.Task, n string, ctx *structures.Context, infra_outputs *map[string]map[string]string, l*logging.Config, r *structures.RunInfo) error{
   runCtx := make(map[string]string, 2)
   runCtx["success"] = "false"
   defer ctx.SetEventValues(n, runCtx)

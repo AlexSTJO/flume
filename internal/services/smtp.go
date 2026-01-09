@@ -22,7 +22,7 @@ func (s EmailService) Parameters() []string {
   return []string{"username", "password", "host", "recipient", "subject", "body"}
 }
 
-func (s EmailService) Run(t structures.Task, n string, ctx *structures.Context, infra_outputs *map[string]map[string]string, l *logging.Config) error {
+func (s EmailService) Run(t structures.Task, n string, ctx *structures.Context, infra_outputs *map[string]map[string]string, l *logging.Config, r *structures.RunInfo) error {
   tContext := make(map[string]string)
   var err error
   defer func() {

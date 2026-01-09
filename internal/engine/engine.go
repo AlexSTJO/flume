@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"runtime"
 	"sync"
-  "path/filepath"
 
 	"github.com/AlexSTJO/flume/internal/infra"
 	"github.com/AlexSTJO/flume/internal/logging"
@@ -60,7 +59,7 @@ func (e *Engine) Start() error {
 		logger.ErrorLogger(fmt.Errorf("Error loading .env file"))
 	}
   
-  infra_outputs, err := infra.Deploy(e.Flume.Infrastructure, &logger)
+  infra_outputs, err := infra.Deploy(e.Flume.Infrastructure, e.RunInfo, &logger)
   if err != nil {
     logger.ErrorLogger(err)
     return err
@@ -68,10 +67,6 @@ func (e *Engine) Start() error {
 
 
   ctx := structures.NewContext()
-  flume_info := make(map[string]string, 1)
-  flume_path := filepath.Join(".", ".flume", e.FlumeName)
-  flume_info["path"] = flume_path 
-  ctx.SetEventValues("flume_info", flume_info)
 
   
   logger.InfoLogger("Graphing Runtime")
@@ -129,7 +124,7 @@ func (e *Engine) Start() error {
       if !ok {
         logger.ErrorLogger(fmt.Errorf("Unrecognized service"))
       }
-      if err = svc.Run(task, name, ctx, infra_outputs, &logger); err != nil {
+      if err = svc.Run(task, name, ctx, infra_outputs, &logger, e.RunInfo); err != nil {
         close(ready)
         logger.ErrorLogger(err)
       } 

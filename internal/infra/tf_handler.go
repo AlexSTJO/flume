@@ -1,17 +1,18 @@
 package infra
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
-  "github.com/AlexSTJO/flume/internal/logging"
+
+	"github.com/AlexSTJO/flume/internal/github"
+	"github.com/AlexSTJO/flume/internal/logging"
 	"github.com/AlexSTJO/flume/internal/structures"
-  "github.com/AlexSTJO/flume/internal/utils"
-  "errors"
-  "path"
-  "strings"
+	"github.com/AlexSTJO/flume/internal/utils"
 )
 
 
@@ -41,16 +42,18 @@ type tfOutputValue struct {
     Value     string             `json:"value"`
 }
 
-type Terraform struct {}
+type Terraform struct {
+  RunDir string
+}
 
 
 func (t *Terraform) Name() string {
   return "terraform"
 }
 
-func (t *Terraform) Call(d structures.Deployment, l *logging.Config) (map[string]string, error) {
-  l.InfoLogger(fmt.Sprintf("Pulling Terraform Remote Repo: %s", d.Repo))
-  key, err := TerraformPull(d.Repo, l)
+func (t *Terraform) Call(d structures.Deployment, r *structures.RunInfo, l *logging.Config) (map[string]string, error) {
+  l.InfoLogger(fmt.Sprintf("Cloning Terraform Remote Repo: %s", d.Repo))
+  key, err := TerraformPull(d.Repo, r, l)
   if err != nil {
     return nil, fmt.Errorf("Error pulling terraform repo: %w", err)
   }
@@ -103,84 +106,35 @@ func TerraformState(key string) (*State, error) {
   return ParseState(out)
 }
 
-func TerraformPull(repo string, l *logging.Config) (string, error) {
-  clean := strings.TrimSuffix(repo, ".git")
-  name := path.Base(clean)
-
-  repo_folder := filepath.Join(".", "terraform", name) 
-
-  _ = os.MkdirAll(filepath.Join(".", "terraform"), 0755)
-
-   
-  keyDir := filepath.Join("terraform", ".keys", name)
-  b, err := utils.KeyExists(keyDir)
+func TerraformPull(repo string, r *structures.RunInfo, l *logging.Config) (string, error) {
+  targetDir := filepath.Join(r.RunDir, "terraform", "repo")
+  owner, repo,err := utils.ParseGitHubRepo(repo)
   if err != nil {
-    return "", fmt.Errorf("checking key existence: %w", err)
+    return "", err
   }
 
-  if !b {
-    if err := utils.GenerateDeployKey(keyDir); err != nil{
-      return "", fmt.Errorf("generating deploy key: %w", err)
-    }
-    s, err := utils.ReadKey(keyDir)
-    if err != nil {
-      return "", fmt.Errorf("error reading key: %w", err)
-    }
-    l.InfoLogger(fmt.Sprintf("Deploy key generated for '%s': %s",repo, s))
-    l.InfoLogger("To add key -> Log into GitHub Repo -> Settings -> Deploy Keys -> Add Deploy Key")   
-  }
-
-  if b := utils.HasRepoAccess(repo, keyDir); !b {
-    l.ErrorLogger(fmt.Errorf("deploy key for '%s' does not have repo access", repo))
-    s, err := utils.ReadKey(keyDir)
-    if err != nil {
-      return "", fmt.Errorf("error reading key: %w", err)
-    }
-    l.InfoLogger(fmt.Sprintf("Key: %s", s))
-    l.InfoLogger("To add key -> Log into GitHub Repo -> Settings -> Deploy Keys -> Add Deploy Key") 
-    return "", fmt.Errorf("git error")
-  }
-
-  private_key_path := filepath.Join(keyDir, "id_ed25519")
-  ssh_env := fmt.Sprintf(
-    `GIT_SSH_COMMAND=ssh -i %q -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new`,
-    private_key_path,
-  )
-
- 
-  exists := true
-  _, err = os.Stat(repo_folder)
+  token, err := githubapp.InstallationTokenForRepo(context.Background(), owner, repo)
   if err != nil {
-    if os.IsNotExist(err) {
-      exists = false
-    } else {
-      return "", fmt.Errorf("Error checking git repo: %w", err)
-    }
+    return "", err
   }
-  if exists { 
-    cmd := exec.Command("git", "pull", "--ff-only")
-    cmd.Env = append(os.Environ(), ssh_env)
-    out, err := cmd.CombinedOutput()
-    fmt.Println(string(out))
-    if err != nil {
-      return "", fmt.Errorf("Error pulling terraform repo from existing folder: %w", err)
-    }
-  } else { 
-    cmd := exec.Command("git", "clone", repo, repo_folder)
-    cmd.Env = append(os.Environ(), ssh_env)
-    _, err = cmd.CombinedOutput()
-    if err != nil {
-      return "", fmt.Errorf("Error cloning repo: %w", err)
-    } 
+
+
+  repoURL := fmt.Sprintf("https://x-access-token:%s@github.com/AlexSTJO/%s", token, repo)
+  cmd := exec.Command("git", "clone", repoURL, targetDir)
+  _, err = cmd.CombinedOutput()
+  if err != nil {
+    return "", err
   }
-  
-  return name, nil
+  l.InfoLogger("Terraform Repo Cloned Successfully")
+
+  return targetDir, nil 
+
 }
 
 func TerraformInit(key string) error {
   cmd := exec.Command("terraform", "init", "-input=false", "-no-color")
  
-  cmd.Dir = filepath.Join(".", "terraform", key)
+  cmd.Dir = key
   cmd.Env = append(os.Environ(), "TF_IN_AUTOMATION=1")
 
   _, err := cmd.CombinedOutput()
@@ -195,7 +149,7 @@ func TerraformInit(key string) error {
 
 func TerraformPlan(key string, var_file string) (bool, error) {   
   cmd := exec.Command("terraform", "plan", "-detailed-exitcode", "-input=false", "-var-file="+var_file, "-no-color")
-  cmd.Dir = filepath.Join(".", "terraform", key)
+  cmd.Dir = key
   cmd.Env = append(os.Environ(), "TF_IN_AUTOMATION=1")
 
   _, err := cmd.CombinedOutput()
@@ -227,10 +181,9 @@ func ParseState(data []byte) (*State, error) {
 
 func TerraformApply(key string, var_file string) (error) {
   cmd := exec.Command("terraform", "apply", "-auto-approve", "-input=false", "-var-file="+var_file)
-  cmd.Dir = filepath.Join(".", "terraform", key)
+  cmd.Dir = key
   
-  _, err := cmd.CombinedOutput() // stdout + stderr together
-
+  _, err := cmd.CombinedOutput() 
 	if err != nil {
 		return fmt.Errorf(
       "terraform apply failed status: %w",err)
@@ -240,7 +193,7 @@ func TerraformApply(key string, var_file string) (error) {
 
 func TerraformOutputs(key string) (map[string]string, error) { 
   cmd := exec.Command("terraform", "output", "-json")
-  cmd.Dir = filepath.Join(".", "terraform", key)
+  cmd.Dir = key
 
   out, err := cmd.CombinedOutput()
   if err != nil {

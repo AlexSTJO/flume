@@ -22,7 +22,7 @@ func (s ShellService) Parameters() []string {
   return []string{"command"}
 } 
 
-func (s ShellService) Run(t structures.Task, n string,  ctx *structures.Context, infra_outputs *map[string]map[string]string, l *logging.Config) error {       
+func (s ShellService) Run(t structures.Task, n string,  ctx *structures.Context, infra_outputs *map[string]map[string]string, l *logging.Config,r *structures.RunInfo ) error {       
   rContext := make(map[string]string, 2)
   raw_command, err := t.StringParam("command")
   if err != nil { return err }

@@ -40,7 +40,7 @@ func NewS3SyncService() (*S3UploadService, error) {
     }, nil
 }
 
-func (s S3UploadService) Run(t structures.Task, n string, ctx *structures.Context, infra_outputs *map[string]map[string]string, l*logging.Config) error {
+func (s S3UploadService) Run(t structures.Task, n string, ctx *structures.Context, infra_outputs *map[string]map[string]string, l*logging.Config, r *structures.RunInfo) error {
   runCtx := make(map[string]string, 1)
   defer ctx.SetEventValues(n, runCtx)
   runCtx["success"] = "false"

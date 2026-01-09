@@ -47,7 +47,7 @@ func NewEcrUploadService() (*EcrUploadService, error) {
   }, nil
 }
 
-func (s EcrUploadService) Run(t structures.Task, n string, ctx *structures.Context, infra_outputs *map[string]map[string]string, l*logging.Config) error {
+func (s EcrUploadService) Run(t structures.Task, n string, ctx *structures.Context, infra_outputs *map[string]map[string]string, l*logging.Config, r *structures.RunInfo) error {
   runCtx := make(map[string]string, 2)
   defer ctx.SetEventValues(n, runCtx)
   runCtx["success"] = "false"

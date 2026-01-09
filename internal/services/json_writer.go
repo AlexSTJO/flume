@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/AlexSTJO/flume/internal/logging"
 	"github.com/AlexSTJO/flume/internal/resolver"
@@ -20,18 +21,24 @@ func (s JsonWriterService) Name() string {
 }
 
 func (s JsonWriterService) Parameters() []string {
-  return []string{"data"}
+  return []string{"file_name", "data"}
 }
 
-func (s JsonWriterService) Run(t structures.Task, n string, ctx *structures.Context, infra_outputs *map[string]map[string]string, l*logging.Config) error{
+func (s JsonWriterService) Run(t structures.Task, n string, ctx *structures.Context, infra_outputs *map[string]map[string]string, l*logging.Config, r *structures.RunInfo) error{
   runCtx := make(map[string]string, 1)
   defer ctx.SetEventValues(n, runCtx)
   runCtx["success"] = "false"
-  
+ 
+  u_file_name, err := t.StringParam("file_name")
+  if err != nil { return err }
+  file_name, err := resolver.ResolveStringParam(u_file_name, ctx, infra_outputs)
+  if err != nil { return err }
 
-  flume_info := ctx.GetEventValues("flume_info")
-  flume_folder := flume_info["path"]
-  json_file := filepath.Join(flume_folder, n, "meta.json")
+  if !strings.HasSuffix(file_name, ".json") {
+    file_name = file_name + ".json"
+  }
+
+  json_file := filepath.Join(r.RunDir, "job_outputs", n, file_name)
   
 
   payload := make(map[string]any)

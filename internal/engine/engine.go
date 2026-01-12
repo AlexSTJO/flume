@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"sync"
 
+	"github.com/AlexSTJO/flume/internal/condition"
 	"github.com/AlexSTJO/flume/internal/infra"
 	"github.com/AlexSTJO/flume/internal/logging"
 	"github.com/AlexSTJO/flume/internal/structures"
@@ -69,7 +70,7 @@ func (e *Engine) Start() error {
 
   
   logger.InfoLogger("Graphing Runtime")
-  fmt.Println()
+  fmt.Println("-------------------")
   g, err := structures.BuildGraph(e.Flume) 
   if err != nil {
     logger.ErrorLogger(err)
@@ -119,6 +120,30 @@ func (e *Engine) Start() error {
     for name := range(ready){
       logger.InfoLogger(fmt.Sprintf("Worker recieved task: %s", name))
       task := g.Nodes[name]
+
+      result, err := condition.Evaluate(task, ctx, infra_outputs) 
+      if err != nil {
+        logger.WarnLogger(fmt.Sprintf("Condition evaluation failed for '%s': %v, running anyway", name, err))
+      }
+      if !result.ShouldRun {
+        logger.InfoLogger(fmt.Sprintf("Skipping task '%s'. Reason: %s", name, result.Reason))
+        ctx.SetEventValues(name, map[string]string{
+          "success":     "skipped",
+          "skipped":     "true",
+          "skip_reason": result.Reason,
+        })
+        markDone(name)
+
+        mu.Lock()
+        completed++
+        done := completed == len(g.Nodes)
+        mu.Unlock()
+
+        if done {
+            closeOnce.Do(func() { close(ready) })
+        }
+        continue
+      } 
       svc, ok := structures.Registry[task.Service]
       if !ok {
         logger.ErrorLogger(fmt.Errorf("Unrecognized service"))

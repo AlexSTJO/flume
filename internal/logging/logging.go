@@ -26,6 +26,7 @@ type LogLine struct {
 var red = color.New(color.FgRed)
 var green = color.New(color.FgGreen)
 var cyan = color.New(color.FgCyan)
+var yellow = color.New(color.FgYellow)
 
 
 func timeStamp() time.Time {
@@ -97,7 +98,19 @@ func (c *Config) ShellLogger(s string) {
   if !c.DisableLogging {
     c.PipeLogsToFile("SHELL", s)
   }
- 
+
+}
+
+func (c *Config) WarnLogger(s string) {
+  if c.NoColor {
+    fmt.Printf(timeStamp().Format(time.TimeOnly) + "  WARN     " + " %v\n", s)
+  } else {
+    yellow.Printf(timeStamp().Format(time.TimeOnly) + "  WARN     " + " %v\n", s)
+  }
+
+  if !c.DisableLogging {
+    c.PipeLogsToFile("WARN", s)
+  }
 }
 
 

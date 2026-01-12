@@ -19,6 +19,8 @@ type Task struct {
   Version int `yaml:"version"`
   Service string `yaml:"service"`
   Dependencies []string `yaml:"dependencies"`
+  RunIf string `yaml:"run_if,omitempty"`
+  SkipIf string `yaml:"skip_if,omitempty"`
   Parameters map[string]any `yaml:"parameters"`
   Resources []string `yaml:"resources,omitempty"`
 }

@@ -17,7 +17,7 @@ type Engine struct{
   FlumeName string
   RunInfo *structures.RunInfo
   Flume *structures.Pipeline
-  LogPath string
+  DisableLogging bool
   Context *structures.Context
 }
 
@@ -26,7 +26,7 @@ func Build(p *structures.Pipeline, r *structures.RunInfo) (*Engine, error) {
     FlumeName: p.Name,
     RunInfo: r,
     Flume: p,
-    LogPath: p.LogPath,
+    DisableLogging: p.DisableLogging,
     Context: structures.NewContext(),
   }
   
@@ -43,23 +43,22 @@ func (e *Engine) Start() error {
   fmt.Printf("%s %s\n", label("Flume:"), value(e.FlumeName))
   fmt.Printf("%s %s\n", label("ID:"), value(e.RunInfo.RunID))
 
-  if e.LogPath != "" {
-    fmt.Printf("%s %s\n", label("Logs:"), value(e.LogPath))
+  logger := logging.New(e.DisableLogging, e.FlumeName, e.RunInfo.RunID, e.RunInfo.RunDir)
+  defer logger.Close()
+  if logger.LogPath != "" {
+    fmt.Printf("%s %s\n", label("Logs:"), value(logger.LogPath))
   } else {
     fmt.Printf("%s %s\n", label("Logs:"), warn("No log file specified"))
   }
 
-  logger := logging.Config{
-    NoColor: false,
-    LogPath: e.LogPath,
-  } 
+   
 
   err := godotenv.Load() 
 	if err != nil {
 		logger.ErrorLogger(fmt.Errorf("Error loading .env file"))
 	}
   
-  infra_outputs, err := infra.Deploy(e.Flume.Infrastructure, e.RunInfo, &logger)
+  infra_outputs, err := infra.Deploy(e.Flume.Infrastructure, e.RunInfo, logger)
   if err != nil {
     logger.ErrorLogger(err)
     return err
@@ -124,7 +123,7 @@ func (e *Engine) Start() error {
       if !ok {
         logger.ErrorLogger(fmt.Errorf("Unrecognized service"))
       }
-      if err = svc.Run(task, name, ctx, infra_outputs, &logger, e.RunInfo); err != nil {
+      if err = svc.Run(task, name, ctx, infra_outputs, logger, e.RunInfo); err != nil {
         close(ready)
         logger.ErrorLogger(err)
       } 

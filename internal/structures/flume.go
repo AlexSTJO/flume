@@ -10,7 +10,7 @@ import (
 type Pipeline struct { 
   Name string `yaml:"name"`
   Tasks map[string]Task `yaml:"tasks"`
-  LogPath string `yaml:"log_path"`
+  DisableLogging bool `yaml:"disable_logging,omitempty"`
   Trigger TriggerSpec `yaml:"trigger"`
   Infrastructure map[string]Deployment `yaml:"infrastructure"`
 }

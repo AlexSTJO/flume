@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/fatih/color"
@@ -11,7 +12,9 @@ import (
 
 type Config struct {
   NoColor bool
+  DisableLogging bool
   LogPath string
+  logFile *os.File
 }
 
 type LogLine struct {
@@ -31,10 +34,24 @@ func timeStamp() time.Time {
 }
 
 
-func New(logPath string) (*Config) {
-  c := &Config{
-    NoColor: false,
-    LogPath: logPath,
+func New(disable_logging bool, name string, run_id string, run_dir string) (*Config) {
+  var c *Config 
+  if disable_logging {
+    c = &Config{
+      NoColor: false,
+      DisableLogging: disable_logging,
+      LogPath: "",
+    }
+  } else {
+    log_path := filepath.Join(run_dir, "logs", run_id+".jsonl")
+    c = &Config{
+      NoColor: false,
+      DisableLogging: disable_logging,
+      LogPath: log_path,    
+      logFile: nil,
+    }
+    c.logFile = c.open()
+
   }
   return c
 } 
@@ -46,46 +63,15 @@ func (c *Config) ErrorLogger(e error) {
     red.Printf(timeStamp().Format(time.TimeOnly) + "  ERROR    " + " %v\n", e)
   }
 
-  if c.LogPath != "" {
-    f, err := os.OpenFile(c.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-    if err != nil {
-      panic(err)
-    }
-    defer f.Close()
-
-    entry := LogLine{
-      TS: time.Now().Format(time.TimeOnly),
-      Level: "ERROR",
-      Msg: e.Error(),
-    }
-
-    enc := json.NewEncoder(f)
-    if err := enc.Encode(entry); err != nil {
-      panic(err)
-    }
+  if !c.DisableLogging {
+    c.PipeLogsToFile("ERROR", e.Error())
   }
 }
 
 func (c *Config) InfoLogger(s string) {
   fmt.Printf(timeStamp().Format(time.TimeOnly) + "  INFO     " + " %v\n", s)
-
-  if c.LogPath != ""{
-    f, err := os.OpenFile(c.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-    if err != nil {
-      panic(err)
-    }
-    defer f.Close()
-
-    entry := LogLine{
-      TS: time.Now().Format(time.TimeOnly),
-      Level: "INFO",
-      Msg: s,
-    }
-
-    enc := json.NewEncoder(f)
-    if err := enc.Encode(entry); err != nil {
-      panic(err)
-    }
+  if !c.DisableLogging {
+    c.PipeLogsToFile("INFO", s)
   }
 }
 func (c *Config) SuccessLogger(s string) {
@@ -95,25 +81,10 @@ func (c *Config) SuccessLogger(s string) {
     green.Printf(timeStamp().Format(time.TimeOnly) + "  SUCCESS  " + " %v\n", s)
   }
 
-
-  if c.LogPath != "" {
-    f, err := os.OpenFile(c.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-    if err != nil {
-      panic(err)
-    }
-    defer f.Close()
-
-    entry := LogLine{
-      TS: time.Now().Format(time.TimeOnly),
-      Level: "SUCCESS",
-      Msg: s,
-    }
-
-    enc := json.NewEncoder(f)
-    if err := enc.Encode(entry); err != nil {
-      panic(err)
-    }
+  if !c.DisableLogging {
+    c.PipeLogsToFile("SUCCESS", s)
   }
+ 
 }
 
 func (c *Config) ShellLogger(s string) {
@@ -123,24 +94,43 @@ func (c *Config) ShellLogger(s string) {
     cyan.Printf(timeStamp().Format(time.TimeOnly) + "  SHELL    " + " %v", s)
   }
 
+  if !c.DisableLogging {
+    c.PipeLogsToFile("SHELL", s)
+  }
+ 
+}
 
-  if c.LogPath != "" {
-    f, err := os.OpenFile(c.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-    if err != nil {
-      panic(err)
-    }
-    defer f.Close()
 
-    entry := LogLine{
-      TS: time.Now().Format(time.TimeOnly),
-      Level: "SHELL",
-      Msg: s,
-    }
+func (c *Config) PipeLogsToFile(level string, msg string) {
+  entry := LogLine{
+    TS: time.Now().Format(time.TimeOnly),
+    Level: level,
+    Msg: msg,
+  }
 
-    enc := json.NewEncoder(f)
-    if err := enc.Encode(entry); err != nil {
-      panic(err)
-    }
+  enc := json.NewEncoder(c.logFile)
+  if err := enc.Encode(entry); err != nil {
+    panic(err)
+  }
+}
+
+
+func (c *Config) open() *os.File {
+  if err := os.MkdirAll(filepath.Dir(c.LogPath), 0755); err != nil {
+    panic(err)
+  }
+
+  f, err := os.OpenFile(c.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+  if err != nil {
+    panic(err)
+  }
+
+  return f
+}
+
+func (c *Config) Close() {
+  if c.logFile != nil {
+    c.logFile.Close()
   }
 }
 

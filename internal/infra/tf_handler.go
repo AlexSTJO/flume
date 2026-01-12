@@ -77,7 +77,7 @@ func (t *Terraform) Call(d structures.Deployment, r *structures.RunInfo, l *logg
         l.ErrorLogger(fmt.Errorf("Error Applying Terraform Deployment"))
         return nil, err
       }
-      l.SuccessLogger("Succesful Terraform Apply") 
+      l.SuccessLogger("Successful Terraform Apply") 
     } else {
       l.InfoLogger("Terraform Modules Up To Date With Infrastructure")
     }

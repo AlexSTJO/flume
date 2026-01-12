@@ -110,11 +110,9 @@ func (s SSMService) Run(t structures.Task, n string, ctx *structures.Context, in
 
 		if l != nil {
 			if len(stdout) > lastStdoutLen {
-				l.InfoLogger(stdout[lastStdoutLen:])
 				lastStdoutLen = len(stdout)
 			}
 			if len(stderr) > lastStderrLen {
-				l.ErrorLogger(fmt.Errorf(stderr[lastStderrLen:]))
 				lastStderrLen = len(stderr)
 			}
 		}	

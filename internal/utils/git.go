@@ -19,7 +19,6 @@ func ParseGitHubRepo(repo string) (owner string, name string, err error) {
   repo = strings.TrimSuffix(repo, ".git")
 
   parts := strings.Split(repo, "/")
-  fmt.Println(parts)
   if len(parts) != 2 {
       return "", "", fmt.Errorf("invalid GitHub repo format: %s", repo)
   }

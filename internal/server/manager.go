@@ -20,6 +20,13 @@ type runRequest struct{
   PipelineRef string `json:"pipeline_ref"`
 }
 
+type RunResponse struct {
+    Status       string `json:"status"`
+    RunID        string `json:"run_id"`
+    LogsUploaded bool   `json:"logs_uploaded,omitempty"`
+}
+
+
 
 func CreateServer() error {
   mux := http.NewServeMux()
@@ -64,7 +71,7 @@ func runPipeline(w http.ResponseWriter, r *http.Request) {
     return
   }
 
-  path := filepath.Join(".", ".flume", run_info.Pipeline, run_info.Pipeline + "yaml")
+  path := filepath.Join(".", ".flume", run_info.Pipeline, run_info.Pipeline + ".yaml")
   if run_info.Remote {
     aws_ctx := context.Background()
     cfg, err := config.LoadDefaultConfig(aws_ctx)
@@ -83,7 +90,7 @@ func runPipeline(w http.ResponseWriter, r *http.Request) {
       err_string := fmt.Sprintf("Failed to get key: '%s' from bucket: '%s' -> %s", run_info.S3.Key, run_info.S3.Bucket, err.Error())
       http.Error(w, err_string, http.StatusBadRequest)
       return
-    }
+}
 
     defer out.Body.Close()
 
@@ -120,5 +127,30 @@ func runPipeline(w http.ResponseWriter, r *http.Request) {
     http.Error(w, "Engine Run Failure: " + err.Error(), http.StatusBadRequest)
     return
   }
-}
 
+  logsUploaded := false
+  if run_info.Remote {
+    log_file := filepath.Join(run_info.RunDir, "logs", run_info.RunID+".jsonl")
+    key := filepath.Join("logs", run_info.Pipeline, run_info.RunID+".jsonl")
+    file, err := os.Open(log_file)
+    if err == nil {
+      defer file.Close()
+      _, err = s3_client.PutObject(context.TODO(), &s3.PutObjectInput{
+        Bucket: aws.String(run_info.S3.Bucket),
+        Key:    aws.String(key),
+        Body:   file,
+      })
+      logsUploaded = (err == nil)
+    }
+  }
+
+  w.Header().Set("Content-Type", "application/json")
+  w.WriteHeader(http.StatusOK)
+  json.NewEncoder(w).Encode(RunResponse{
+    Status:       "success",
+    RunID:        run_info.RunID,
+    LogsUploaded: logsUploaded,
+  })
+  
+
+}

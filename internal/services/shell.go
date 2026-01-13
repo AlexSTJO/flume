@@ -34,7 +34,6 @@ func (s ShellService) Run(t structures.Task, n string,  ctx *structures.Context,
   }
   cmd := exec.Command("sh", "-c", command)
 
-
   var outBuf, errBuf bytes.Buffer
   
   cmd.Stdout = &outBuf

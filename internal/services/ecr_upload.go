@@ -97,22 +97,24 @@ func (s EcrUploadService) Run(t structures.Task, n string, ctx *structures.Conte
 	login.Stderr = nil
 
   if err := login.Run(); err != nil {
-		panic("docker login failed")
+		return fmt.Errorf("docker login failed: %w", err)
 	}
 
   remote_image := fmt.Sprintf("%s:%s", registry, tag)
   l.InfoLogger(fmt.Sprintf("Tagging Image: %s", remote_image))
 
   if err := exec.Command("docker", "tag", local_image, remote_image).Run(); err != nil {
-    l.ErrorLogger(fmt.Errorf("docker tag failed: %w", err))
-    return nil
+    err = fmt.Errorf("docker tag failed: %w", err)
+    l.ErrorLogger(err)
+    return err
 	}
 
   cmd := exec.Command("docker", "push", remote_image)
   _, err = cmd.CombinedOutput()
   if err != nil {
-    l.ErrorLogger(fmt.Errorf("docker push failed: %w", err))
-    return nil 
+    err = fmt.Errorf("docker push failed: %w", err)
+    l.ErrorLogger(err)
+    return err
 	}
 
   l.InfoLogger(fmt.Sprintf("Image succesfully pushed to: %s", remote_image))

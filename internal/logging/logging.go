@@ -36,7 +36,7 @@ func timeStamp() time.Time {
 
 
 func New(disable_logging bool, name string, run_id string, run_dir string) (*Config) {
-  var c *Config 
+  var c *Config
   if disable_logging {
     c = &Config{
       NoColor: false,
@@ -48,11 +48,16 @@ func New(disable_logging bool, name string, run_id string, run_dir string) (*Con
     c = &Config{
       NoColor: false,
       DisableLogging: disable_logging,
-      LogPath: log_path,    
+      LogPath: log_path,
       logFile: nil,
     }
-    c.logFile = c.open()
-
+    logFile, err := c.open()
+    if err != nil {
+      fmt.Fprintf(os.Stderr, "WARNING: Failed to open log file, file logging disabled: %v\n", err)
+      c.DisableLogging = true
+    } else {
+      c.logFile = logFile
+    }
   }
   return c
 } 
@@ -115,6 +120,10 @@ func (c *Config) WarnLogger(s string) {
 
 
 func (c *Config) PipeLogsToFile(level string, msg string) {
+  if c.logFile == nil {
+    return
+  }
+
   entry := LogLine{
     TS: time.Now().Format(time.TimeOnly),
     Level: level,
@@ -123,22 +132,22 @@ func (c *Config) PipeLogsToFile(level string, msg string) {
 
   enc := json.NewEncoder(c.logFile)
   if err := enc.Encode(entry); err != nil {
-    panic(err)
+    fmt.Fprintf(os.Stderr, "WARNING: Failed to write to log file: %v\n", err)
   }
 }
 
 
-func (c *Config) open() *os.File {
+func (c *Config) open() (*os.File, error) {
   if err := os.MkdirAll(filepath.Dir(c.LogPath), 0755); err != nil {
-    panic(err)
+    return nil, fmt.Errorf("failed to create log directory: %w", err)
   }
 
   f, err := os.OpenFile(c.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
   if err != nil {
-    panic(err)
+    return nil, fmt.Errorf("failed to open log file: %w", err)
   }
 
-  return f
+  return f, nil
 }
 
 func (c *Config) Close() {

@@ -1,5 +1,5 @@
 # **Flume**
-A declarative workflow engine for hybrid cloud automation — powered by Go.
+A declarative workflow engine for hybrid cloud automation.
 
 Flume is a lightweight, extensible workflow orchestrator designed to automate builds, deployments, and infrastructure using a simple YAML format. It integrates with Terraform, AWS services, Git, and custom Go services, enabling hybrid workflows that unify application deployment and infrastructure provisioning.
 

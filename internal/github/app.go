@@ -9,12 +9,12 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
-  "sync"
-
 
 	"github.com/golang-jwt/jwt/v5"
 )
+
 type App struct {
 	AppID string
 	Key   *rsa.PrivateKey
@@ -69,7 +69,7 @@ func appJWT(app_id string, key *rsa.PrivateKey) (string, error) {
 }
 
 func InstallationTokenForRepo(ctx context.Context, owner, repo string) (string, error) {
-  app, err := Get()
+	app, err := Get()
 	if err != nil {
 		return "", err
 	}
@@ -99,7 +99,9 @@ func InstallationTokenForRepo(ctx context.Context, owner, repo string) (string, 
 		return "", fmt.Errorf("installation lookup failed (%d): %s", resp.StatusCode, body)
 	}
 
-	var inst struct{ ID int64 `json:"id"` }
+	var inst struct {
+		ID int64 `json:"id"`
+	}
 	if err := json.NewDecoder(resp.Body).Decode(&inst); err != nil {
 		return "", err
 	}
@@ -124,7 +126,9 @@ func InstallationTokenForRepo(ctx context.Context, owner, repo string) (string, 
 		return "", fmt.Errorf("token create failed (%d): %s", resp.StatusCode, body)
 	}
 
-	var tok struct{ Token string `json:"token"` }
+	var tok struct {
+		Token string `json:"token"`
+	}
 	if err := json.NewDecoder(resp.Body).Decode(&tok); err != nil {
 		return "", err
 	}
@@ -133,4 +137,3 @@ func InstallationTokenForRepo(ctx context.Context, owner, repo string) (string, 
 	}
 	return tok.Token, nil
 }
-

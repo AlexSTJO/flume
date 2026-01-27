@@ -1,13 +1,11 @@
 package utils
 
 import (
-  "context"
+	"context"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 )
-
-
 
 func AccountAndRegion(ctx context.Context, cfg aws.Config) (string, string, error) {
 	stsClient := sts.NewFromConfig(cfg)
@@ -19,5 +17,3 @@ func AccountAndRegion(ctx context.Context, cfg aws.Config) (string, string, erro
 
 	return *id.Account, cfg.Region, nil
 }
-
-

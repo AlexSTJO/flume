@@ -11,63 +11,58 @@ import (
 	"github.com/AlexSTJO/flume/internal/structures"
 )
 
-type ShellService struct {}
-
+type ShellService struct{}
 
 func (s ShellService) Name() string {
-  return "shell"
+	return "shell"
 }
 
 func (s ShellService) Parameters() []string {
-  return []string{"command"}
-} 
+	return []string{"command"}
+}
 
-func (s ShellService) Run(t structures.Task, n string,  ctx *structures.Context, infra_outputs *map[string]map[string]string, l *logging.Config,r *structures.RunInfo ) error {       
-  rContext := make(map[string]string, 2)
-  raw_command, err := t.StringParam("command")
-  if err != nil { return err }
-  command, err := resolver.ResolveStringParam(raw_command, ctx, infra_outputs) 
-  if err != nil {
-    rContext["success"] = "false"
-    ctx.SetEventValues(n,rContext)
-    return err
-  }
-  cmd := exec.Command("sh", "-c", command)
+func (s ShellService) Run(t structures.Task, n string, ctx *structures.Context, infra_outputs *map[string]map[string]string, l *logging.Config, r *structures.RunInfo) error {
+	rContext := make(map[string]string, 2)
+	raw_command, err := t.StringParam("command")
+	if err != nil {
+		return err
+	}
+	command, err := resolver.ResolveStringParam(raw_command, ctx, infra_outputs)
+	if err != nil {
+		rContext["success"] = "false"
+		ctx.SetEventValues(n, rContext)
+		return err
+	}
+	cmd := exec.Command("sh", "-c", command)
 
-  var outBuf, errBuf bytes.Buffer
-  
-  cmd.Stdout = &outBuf
-  cmd.Stderr = &errBuf
-  cmd.Stdin = os.Stdin
-  
-  err = cmd.Run()
+	var outBuf, errBuf bytes.Buffer
 
-  if (err != nil) {
-    rContext["success"] = "false"
-    ctx.SetEventValues(n, rContext )
-    return fmt.Errorf("Shell Error Occurred: %v", err)
-  }
+	cmd.Stdout = &outBuf
+	cmd.Stderr = &errBuf
+	cmd.Stdin = os.Stdin
 
+	err = cmd.Run()
 
-  if outBuf.Len() > 0 {
-    l.ShellLogger(outBuf.String())
-  }
+	if err != nil {
+		rContext["success"] = "false"
+		ctx.SetEventValues(n, rContext)
+		return fmt.Errorf("Shell Error Occurred: %v", err)
+	}
 
-  if errBuf.Len() > 0 {
-    l.ShellLogger(errBuf.String())
-  }
+	if outBuf.Len() > 0 {
+		l.ShellLogger(outBuf.String())
+	}
 
+	if errBuf.Len() > 0 {
+		l.ShellLogger(errBuf.String())
+	}
 
-  rContext["success"] = "true"
-  ctx.SetEventValues(n, rContext ) 
-  return nil 
+	rContext["success"] = "true"
+	ctx.SetEventValues(n, rContext)
+	return nil
 
 }
 
 func init() {
-  structures.Registry["shell"] = ShellService{}
+	structures.Registry["shell"] = ShellService{}
 }
-
-
-
-

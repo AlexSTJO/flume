@@ -1,147 +1,95 @@
-# **Flume**
+# Flume
+
+[![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat&logo=go)](https://go.dev/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 A declarative workflow engine for hybrid cloud automation.
 
 Flume is a lightweight, extensible workflow orchestrator designed to automate builds, deployments, and infrastructure using a simple YAML format. It integrates with Terraform, AWS services, Git, and custom Go services, enabling hybrid workflows that unify application deployment and infrastructure provisioning.
 
----
+## Table of Contents
 
-## **Features**
+- [Quick Start](#quick-start)
+- [Features](#features)
+- [Configuration](#configuration)
+- [Pipeline Structure](#pipeline-structure)
+- [Services](#services)
+- [Resolver Patterns](#resolver-patterns)
+- [Examples](#examples)
+- [Creating Custom Services](#creating-custom-services)
+- [Roadmap](#roadmap)
 
-- Declarative YAML pipelines
-- Automatic DAG execution with parallel task workers
-- Dynamic resolver engine
-- Terraform integration
-- AWS services: S3 upload, CloudFront invalidation, ECR push, SSM operations
-- Git clone with GitHub App authentication
-- Docker image building
-- Shell execution
-- JSON writer
-- SMTP email notifications
-- Modular service registry
-- API-triggered pipelines
-- Cron scheduling
+## Quick Start
+
+```bash
+# Clone and run
+git clone https://github.com/AlexSTJO/flume.git
+cd flume
+
+# Create .env file
+echo -e "URL=localhost\nPORT=8080" > .env
+
+# Start the server
+go run .
+
+# Trigger a pipeline (in another terminal)
+curl -X POST "http://localhost:8080/run" \
+  -H "Content-Type: application/json" \
+  -d '{"pipeline_ref": "sample-flume"}'
+```
+
+## Features
+
+**Core**
+- Declarative YAML pipelines with automatic DAG execution
+- Parallel task workers with dependency resolution
+- Dynamic resolver engine for variable substitution
+- API-triggered and cron-scheduled pipelines
 - Remote pipelines from S3 (`s3://<bucket>/<key>`)
 - Hash-based file change detection
 
-With more to come...
+**Infrastructure**
+- Terraform integration for infrastructure provisioning
 
----
+**Services**
+- Git clone with GitHub App authentication
+- Shell command execution
+- Docker image building
+- HTTP requests (GET, POST, PUT, DELETE, PATCH)
+- AWS: S3 upload/download, CloudFront invalidation, ECR push, SSM operations
+- SMTP email notifications
+- JSON file writing
+- Modular service registry for custom extensions
 
-## Getting Started
+## Configuration
 
 ### Prerequisites
 
-- Go (1.22+ recommended)
-- Terraform (if using the `terraform` service)
+- Go 1.22+
+- Terraform (if using infrastructure provisioning)
 - AWS credentials configured (if using AWS services)
-- `.env` file for server configuration
 
-### Configuration
+### Environment
 
-Flume reads its server configuration from a `.env` file in the project root.
-
-Example:
+Create a `.env` file in the project root:
 
 ```env
 URL=localhost
 PORT=8080
 ```
 
-Flume will use these values to construct its server address as:
-
-```text
-http://$URL:$PORT
-```
-
----
-
-## Installation
-
-Clone the repository and run Flume directly with Go:
+### Build Options
 
 ```bash
-git clone https://github.com/AlexSTJO/flume.git
-cd flume
+# Run directly
 go run .
+
+# Build binary
+go build -o flume .
+./flume
 ```
 
-Flume will start the HTTP server using the URL and PORT defined in your `.env` file.
-
----
-
-## Triggering a Pipeline via API
-
-Pipelines are defined in YAML and referenced by name or S3 URI. To trigger a pipeline, send an HTTP POST request to the `/run` endpoint of the Flume server.
-
-Example using `curl`:
-
-```bash
-# Local pipeline
-curl -X POST "http://$URL:$PORT/run" \
-  -H "Content-Type: application/json" \
-  -d '{"pipeline_ref": "sample-flume"}'
-
-# Remote pipeline from S3
-curl -X POST "http://$URL:$PORT/run" \
-  -H "Content-Type: application/json" \
-  -d '{"pipeline_ref": "s3://my-bucket/pipelines/my-pipeline"}'
-```
-
-Where:
-
-- `$URL` and `$PORT` come from your `.env` file
-- `pipeline_ref` is either a local pipeline name (e.g., `sample-flume`) or an S3 URI
-
----
-
-## **Architecture**
-
-### Services
-
-All task execution is handled through a unified Service interface:
-
-```go
-type Service interface {
-    Name() string
-    Parameters() []string
-    Run(t Task, n string, ctx *Context, infra_outputs *map[string]map[string]string, l *logging.Config, r *RunInfo) error
-}
-```
-
-Services register themselves in `init()`:
-
-```go
-func init() {
-    structures.Registry["my_service"] = &MyService{}
-}
-```
-
-### Available Services
-
-| Service | Description |
-|---------|-------------|
-| `git` | Clone repositories (uses GitHub App auth) |
-| `shell` | Execute shell commands |
-| `s3_upload` | Upload files to S3 |
-| `cloudfront_invalidate` | Invalidate CloudFront distribution |
-| `json_writer` | Write JSON data to file |
-| `docker_build` | Build Docker images |
-| `ecr_upload` | Push images to ECR |
-| `smtp` | Send emails |
-| `ssm_service` | AWS SSM operations |
-
-### Resolver Patterns
-
-| Pattern | Meaning |
-|--------|---------|
-| `${context:task.value}` | Task output |
-| `${infra:terraform.output}` | Terraform output |
-| `${env:VAR}` | Environment variable |
-| `${timestamp}` | Execution timestamp |
-
----
-
-## **Pipeline Structure**
+## Pipeline Structure
 
 Pipelines are stored in `.flume/<pipeline-name>/<pipeline-name>.yaml`:
 
@@ -153,35 +101,74 @@ Pipelines are stored in `.flume/<pipeline-name>/<pipeline-name>.yaml`:
     └── another-pipeline.yaml
 ```
 
-### Pipeline Schema
+### Schema
 
 ```yaml
 name: "pipeline-name"
 trigger:
-  type: "api"           # or "cron" with cron_expression
-  cron_expression: ""   # e.g., "0 0 * * *" (optional, for cron triggers)
+  type: "api"           # or "cron"
+  cron_expression: ""   # e.g., "0 0 * * *" (for cron triggers)
 log_path: ""
 
 infrastructure:
   deployment_name:
     service: terraform
     action: sync
-    repo: "git@github.com:user/terraform-repo.git"  # Git repo containing Terraform code
+    repo: "git@github.com:user/terraform-repo.git"
     var-file: "terraform.tfvars"
 
 tasks:
   task_name:
     service: service_name
-    dependencies: ["other_task"]  # Tasks to run before this one
+    dependencies: ["other_task"]
     parameters:
       key: value
 ```
 
----
+### Triggering Pipelines
 
-## **Example Pipeline**
+```bash
+# Local pipeline
+curl -X POST "http://localhost:8080/run" \
+  -H "Content-Type: application/json" \
+  -d '{"pipeline_ref": "my-pipeline"}'
 
-A CI/CD pipeline that builds and deploys a website:
+# Remote pipeline from S3
+curl -X POST "http://localhost:8080/run" \
+  -H "Content-Type: application/json" \
+  -d '{"pipeline_ref": "s3://my-bucket/pipelines/my-pipeline"}'
+```
+
+## Services
+
+| Service | Description | Required Parameters |
+|---------|-------------|---------------------|
+| `git` | Clone repositories (GitHub App auth) | `repo_url` |
+| `shell` | Execute shell commands | `command` |
+| `docker_build` | Build Docker images | `build_path`, `image_name`, `tag` |
+| `http_request` | Make HTTP requests | `url`, `method`, `body`, `headers` |
+| `s3_upload` | Upload files to S3 | `bucket`, `source`, `prefix` |
+| `s3_download` | Download files from S3 | `bucket`, `destination`, `key` or `prefix` |
+| `ecr_upload` | Push images to ECR | `local_image`, `registry`, `tag` |
+| `cloudfront_invalidate` | Invalidate CloudFront cache | `dist_id`, `paths` |
+| `ssm` | AWS SSM operations | `instance_id`, `commands` |
+| `smtp` | Send emails | (see service file) |
+| `json_writer` | Write JSON to file | (see service file) |
+
+## Resolver Patterns
+
+Use these patterns in task parameters to reference dynamic values:
+
+| Pattern | Description | Example |
+|---------|-------------|---------|
+| `${context:<task>.<key>}` | Output from previous task | `${context:git_pull.repo_folder}` |
+| `${infra:terraform.<output>}` | Terraform output value | `${infra:terraform.bucket_name}` |
+| `${env:<VAR>}` | Environment variable | `${env:AWS_REGION}` |
+| `${timestamp}` | Execution timestamp | `${timestamp}` |
+
+## Examples
+
+### Website Deployment
 
 ```yaml
 name: "portfolio-website"
@@ -228,7 +215,7 @@ tasks:
       paths: ["/*"]
 ```
 
-### Docker Build & Deploy Example
+### Docker Build & ECR Deploy
 
 ```yaml
 name: "flume-deploy"
@@ -266,7 +253,7 @@ tasks:
       registry: ${infra:terraform.ecr_repository_url}
       tag: "latest"
 
-  ssm:
+  deploy:
     service: ssm
     dependencies: ["ecr_upload"]
     parameters:
@@ -281,9 +268,26 @@ tasks:
           docker run -d --name flume -p 8080:8080 ${context:ecr_upload.remote_image}
 ```
 
----
+### HTTP Webhook Notification
 
-## **Custom Service Example**
+```yaml
+tasks:
+  notify:
+    service: http_request
+    dependencies: ["deploy"]
+    parameters:
+      url: "https://hooks.slack.com/services/xxx"
+      method: "POST"
+      body: '{"text": "Deployment complete"}'
+      headers:
+        Content-Type: "application/json"
+```
+
+## Creating Custom Services
+
+1. Create a file in `internal/services/`
+2. Implement the `Service` interface
+3. Register via `init()`
 
 ```go
 package services
@@ -300,11 +304,9 @@ func (s MyService) Name() string { return "my_service" }
 func (s MyService) Parameters() []string { return []string{"my_param"} }
 
 func (s MyService) Run(t structures.Task, n string, ctx *structures.Context, infra_outputs *map[string]map[string]string, l *logging.Config, r *structures.RunInfo) error {
-    // Create output map for downstream tasks
     runCtx := make(map[string]string)
     defer ctx.SetEventValues(n, runCtx)
 
-    // Get parameters from task
     myParam, err := t.StringParam("my_param")
     if err != nil {
         return err
@@ -312,10 +314,7 @@ func (s MyService) Run(t structures.Task, n string, ctx *structures.Context, inf
 
     // Do work here...
 
-    // Set outputs for downstream tasks
-    runCtx["success"] = "true"
     runCtx["result"] = myParam
-
     return nil
 }
 
@@ -324,18 +323,14 @@ func init() {
 }
 ```
 
----
+## Roadmap
 
-## **Roadmap**
+- [ ] Web UI
+- [ ] Remote workers
+- [ ] Retry strategies
+- [ ] Secrets management
+- [ ] Plugin system
 
-- Web UI  
-- Remote workers  
-- Retry strategies  
-- Secrets management  
-- Plugin system  
+## License
 
----
-
-## **License**
-
-MIT License.
+MIT

@@ -14,6 +14,11 @@ type Pipeline struct {
 	Infrastructure map[string]Deployment `yaml:"infrastructure"`
 }
 
+type RetryConfig struct {
+	MaxAttempts int    `yaml:"max_attempts,omitempty"`
+	Delay       string `yaml:"delay,omitempty"`
+}
+
 type Task struct {
 	Version      int            `yaml:"version"`
 	Service      string         `yaml:"service"`
@@ -22,6 +27,7 @@ type Task struct {
 	SkipIf       string         `yaml:"skip_if,omitempty"`
 	Parameters   map[string]any `yaml:"parameters"`
 	Resources    []string       `yaml:"resources,omitempty"`
+	Retry        RetryConfig    `yaml:"retry,omitempty"`
 }
 
 type TriggerSpec struct {

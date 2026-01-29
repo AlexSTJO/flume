@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"runtime"
 	"sync"
+	"time"
 
 	"github.com/AlexSTJO/flume/internal/condition"
 	"github.com/AlexSTJO/flume/internal/infra"
@@ -139,9 +140,38 @@ func (e *Engine) Start() error {
 			if !ok {
 				logger.ErrorLogger(fmt.Errorf("Unrecognized service"))
 			}
-			if err = svc.Run(task, name, ctx, infra_outputs, logger, e.RunInfo); err != nil {
+
+			maxAttempts := 1
+			if task.Retry.MaxAttempts > 0 {
+				maxAttempts = task.Retry.MaxAttempts
+			}
+			delay := 5 * time.Second
+			if task.Retry.Delay != "" {
+				if d, parseErr := time.ParseDuration(task.Retry.Delay); parseErr == nil {
+					delay = d
+				}
+			}
+
+			var lastErr error
+			for attempt := 1; attempt <= maxAttempts; attempt++ {
+				if attempt > 1 {
+					logger.WarnLogger(fmt.Sprintf("Retrying task '%s' (attempt %d/%d) after %v", name, attempt, maxAttempts, delay))
+					time.Sleep(delay)
+				}
+
+				lastErr = svc.Run(task, name, ctx, infra_outputs, logger, e.RunInfo)
+				if lastErr == nil {
+					break
+				}
+
+				if attempt < maxAttempts {
+					logger.WarnLogger(fmt.Sprintf("Task '%s' failed (attempt %d/%d): %v", name, attempt, maxAttempts, lastErr))
+				}
+			}
+
+			if lastErr != nil {
 				close(ready)
-				logger.ErrorLogger(err)
+				logger.ErrorLogger(lastErr)
 			}
 			markDone(name)
 

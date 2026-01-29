@@ -152,6 +152,13 @@ func (e *Engine) Start() error {
 				}
 			}
 
+			var timeout time.Duration
+			if task.Timeout != "" {
+				if t, parseErr := time.ParseDuration(task.Timeout); parseErr == nil {
+					timeout = t
+				}
+			}
+
 			var lastErr error
 			for attempt := 1; attempt <= maxAttempts; attempt++ {
 				if attempt > 1 {
@@ -159,7 +166,22 @@ func (e *Engine) Start() error {
 					time.Sleep(delay)
 				}
 
-				lastErr = svc.Run(task, name, ctx, infra_outputs, logger, e.RunInfo)
+				if timeout > 0 {
+					done := make(chan error, 1)
+					go func() {
+						done <- svc.Run(task, name, ctx, infra_outputs, logger, e.RunInfo)
+					}()
+
+					select {
+					case lastErr = <-done:
+					case <-time.After(timeout):
+						lastErr = fmt.Errorf("task '%s' timed out after %v", name, timeout)
+						logger.WarnLogger(fmt.Sprintf("Task '%s' timed out after %v", name, timeout))
+					}
+				} else {
+					lastErr = svc.Run(task, name, ctx, infra_outputs, logger, e.RunInfo)
+				}
+
 				if lastErr == nil {
 					break
 				}

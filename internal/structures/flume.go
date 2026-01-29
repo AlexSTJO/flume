@@ -28,6 +28,7 @@ type Task struct {
 	Parameters   map[string]any `yaml:"parameters"`
 	Resources    []string       `yaml:"resources,omitempty"`
 	Retry        RetryConfig    `yaml:"retry,omitempty"`
+	Timeout      string         `yaml:"timeout,omitempty"`
 }
 
 type TriggerSpec struct {

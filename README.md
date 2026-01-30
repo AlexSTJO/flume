@@ -36,6 +36,14 @@ go run .
 curl -X POST "http://localhost:8080/run" \
   -H "Content-Type: application/json" \
   -d '{"pipeline_ref": "sample-flume"}'
+
+# Trigger with runtime parameters
+curl -X POST "http://localhost:8080/run" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "pipeline_ref": "sample-flume",
+    "parameters": {"environment": "staging", "version": "1.2.3"}
+  }'
 ```
 
 ## Features
@@ -44,6 +52,10 @@ curl -X POST "http://localhost:8080/run" \
 - Declarative YAML pipelines with automatic DAG execution
 - Parallel task workers with dependency resolution
 - Dynamic resolver engine for variable substitution
+- Runtime pipeline parameters via API
+- Conditional task execution (`run_if`, `skip_if`)
+- Task retry with configurable attempts and delay
+- Task timeout support
 - API-triggered and cron-scheduled pipelines
 - Remote pipelines from S3 (`s3://<bucket>/<key>`)
 - Hash-based file change detection
@@ -121,6 +133,12 @@ tasks:
   task_name:
     service: service_name
     dependencies: ["other_task"]
+    run_if: "${param:env} == production"   # optional: run only if condition is true
+    skip_if: "${context:prev.skip} == true" # optional: skip if condition is true
+    timeout: "5m"                           # optional: task timeout (e.g., 30s, 5m, 1h)
+    retry:                                  # optional: retry configuration
+      max_attempts: 3
+      delay: "10s"
     parameters:
       key: value
 ```
@@ -137,7 +155,21 @@ curl -X POST "http://localhost:8080/run" \
 curl -X POST "http://localhost:8080/run" \
   -H "Content-Type: application/json" \
   -d '{"pipeline_ref": "s3://my-bucket/pipelines/my-pipeline"}'
+
+# With runtime parameters
+curl -X POST "http://localhost:8080/run" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "pipeline_ref": "my-pipeline",
+    "parameters": {
+      "environment": "production",
+      "version": "2.0.0",
+      "debug": "false"
+    }
+  }'
 ```
+
+Parameters are accessible in your pipeline using `${param:name}` syntax.
 
 ## Services
 
@@ -164,6 +196,7 @@ Use these patterns in task parameters to reference dynamic values:
 | `${context:<task>.<key>}` | Output from previous task | `${context:git_pull.repo_folder}` |
 | `${infra:terraform.<output>}` | Terraform output value | `${infra:terraform.bucket_name}` |
 | `${env:<VAR>}` | Environment variable | `${env:AWS_REGION}` |
+| `${param:<name>}` | Runtime parameter from API | `${param:environment}` |
 | `${timestamp}` | Execution timestamp | `${timestamp}` |
 
 ## Examples
@@ -283,6 +316,45 @@ tasks:
         Content-Type: "application/json"
 ```
 
+### Parameterized Deployment
+
+Pass runtime parameters to customize pipeline behavior:
+
+```yaml
+name: "parameterized-deploy"
+trigger:
+  type: "api"
+
+tasks:
+  deploy:
+    service: shell
+    parameters:
+      command: |
+        echo "Deploying version ${param:version} to ${param:environment}"
+        ./deploy.sh --env ${param:environment} --version ${param:version}
+
+  notify:
+    service: http_request
+    dependencies: ["deploy"]
+    run_if: "${param:environment} == production"
+    parameters:
+      url: "https://hooks.slack.com/services/xxx"
+      method: "POST"
+      body: '{"text": "Deployed ${param:version} to production"}'
+      headers:
+        Content-Type: "application/json"
+```
+
+Trigger with:
+```bash
+curl -X POST "http://localhost:8080/run" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "pipeline_ref": "parameterized-deploy",
+    "parameters": {"environment": "production", "version": "1.5.0"}
+  }'
+```
+
 ## Creating Custom Services
 
 1. Create a file in `internal/services/`
@@ -327,7 +399,10 @@ func init() {
 
 - [ ] Web UI
 - [ ] Remote workers
-- [ ] Retry strategies
+- [x] Retry strategies
+- [x] Task timeouts
+- [x] Conditional execution
+- [x] Pipeline parameters
 - [ ] Secrets management
 - [ ] Plugin system
 

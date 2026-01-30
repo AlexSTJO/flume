@@ -16,13 +16,13 @@ type Result struct {
 
 var conditionRE = regexp.MustCompile(`^(.+?)\s*(==|!=)\s*(.+)$`)
 
-func Evaluate(t structures.Task, c *structures.Context, i *map[string]map[string]string) (Result, error) {
+func Evaluate(t structures.Task, c *structures.Context, i *map[string]map[string]string, r *structures.RunInfo) (Result, error) {
 	var result Result
 	if t.RunIf == "" && t.SkipIf == "" {
 		return Result{ShouldRun: true, Reason: ""}, nil
 	}
 	if t.RunIf != "" {
-		boo, err := evaluateCondition(t.RunIf, c, i)
+		boo, err := evaluateCondition(t.RunIf, c, i, r)
 		if err != nil {
 			return result, err
 		}
@@ -34,7 +34,7 @@ func Evaluate(t structures.Task, c *structures.Context, i *map[string]map[string
 			result.Reason = "'run_if' condition evaluated to 'false'"
 		}
 	} else if t.SkipIf != "" {
-		boo, err := evaluateCondition(t.SkipIf, c, i)
+		boo, err := evaluateCondition(t.SkipIf, c, i, r)
 		if err != nil {
 			return result, err
 		}
@@ -49,14 +49,14 @@ func Evaluate(t structures.Task, c *structures.Context, i *map[string]map[string
 	return result, nil
 }
 
-func evaluateCondition(s string, c *structures.Context, i *map[string]map[string]string) (bool, error) {
+func evaluateCondition(s string, c *structures.Context, i *map[string]map[string]string, r *structures.RunInfo) (bool, error) {
 	matches := conditionRE.FindStringSubmatch(s)
 	if matches == nil {
 		return false, fmt.Errorf("Invalid format for condition: %s", s)
 	}
 
 	left := strings.TrimSpace(matches[1])
-	resolved_left, err := resolver.ResolveString(left, c, i)
+	resolved_left, err := resolver.ResolveString(left, c, i, r)
 	if err != nil {
 		return false, err
 	}
@@ -64,7 +64,7 @@ func evaluateCondition(s string, c *structures.Context, i *map[string]map[string
 	op := strings.TrimSpace(matches[2])
 
 	right := strings.TrimSpace(matches[3])
-	resolved_right, err := resolver.ResolveString(right, c, i)
+	resolved_right, err := resolver.ResolveString(right, c, i, r)
 	if err != nil {
 		return false, err
 	}

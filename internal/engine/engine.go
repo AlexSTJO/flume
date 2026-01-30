@@ -113,7 +113,7 @@ func (e *Engine) Start() error {
 			logger.InfoLogger(fmt.Sprintf("Worker recieved task: %s", name))
 			task := g.Nodes[name]
 
-			result, err := condition.Evaluate(task, ctx, infra_outputs)
+			result, err := condition.Evaluate(task, ctx, infra_outputs, e.RunInfo)
 			if err != nil {
 				logger.WarnLogger(fmt.Sprintf("Condition evaluation failed for '%s': %v, running anyway", name, err))
 			}

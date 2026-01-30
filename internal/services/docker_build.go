@@ -30,13 +30,13 @@ func (s DockerBuildService) Run(t structures.Task, n string, ctx *structures.Con
 	if err != nil {
 		return err
 	}
-	build_path, err := resolver.ResolveStringParam(raw_build_path, ctx, infra_outputs)
+	build_path, err := resolver.ResolveStringParam(raw_build_path, ctx, infra_outputs, r)
 	if err != nil {
 		return err
 	}
 
 	raw_attachments := t.Parameters["attachments"]
-	resolved, err := resolver.ResolveAny(raw_attachments, ctx, infra_outputs)
+	resolved, err := resolver.ResolveAny(raw_attachments, ctx, infra_outputs, r)
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func (s DockerBuildService) Run(t structures.Task, n string, ctx *structures.Con
 	if err != nil {
 		return err
 	}
-	image_name, err := resolver.ResolveString(raw_image_name, ctx, infra_outputs)
+	image_name, err := resolver.ResolveString(raw_image_name, ctx, infra_outputs, r)
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func (s DockerBuildService) Run(t structures.Task, n string, ctx *structures.Con
 	if err != nil {
 		return err
 	}
-	tag, err := resolver.ResolveStringParam(raw_tag, ctx, infra_outputs)
+	tag, err := resolver.ResolveStringParam(raw_tag, ctx, infra_outputs, r)
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func (s DockerBuildService) Run(t structures.Task, n string, ctx *structures.Con
 	raw_build_args := t.Parameters["build_args"]
 	build_args := make(map[string]string)
 	if raw_build_args != nil {
-		a_build_args, err := resolver.ResolveAny(raw_build_args, ctx, infra_outputs)
+		a_build_args, err := resolver.ResolveAny(raw_build_args, ctx, infra_outputs, r)
 		if err != nil {
 			return err
 		}

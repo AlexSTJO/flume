@@ -48,7 +48,7 @@ func (s S3DownloadService) Run(t structures.Task, n string, ctx *structures.Cont
 	if err != nil {
 		return err
 	}
-	bucket, err := resolver.ResolveStringParam(rawBucket, ctx, infra_outputs)
+	bucket, err := resolver.ResolveStringParam(rawBucket, ctx, infra_outputs, r)
 	if err != nil {
 		return err
 	}
@@ -57,17 +57,17 @@ func (s S3DownloadService) Run(t structures.Task, n string, ctx *structures.Cont
 	if err != nil {
 		return err
 	}
-	destination, err := resolver.ResolveStringParam(rawDestination, ctx, infra_outputs)
+	destination, err := resolver.ResolveStringParam(rawDestination, ctx, infra_outputs, r)
 	if err != nil {
 		return err
 	}
 
 	var key, prefix string
 	if rawKey, err := t.StringParam("key"); err == nil {
-		key, _ = resolver.ResolveStringParam(rawKey, ctx, infra_outputs)
+		key, _ = resolver.ResolveStringParam(rawKey, ctx, infra_outputs, r)
 	}
 	if rawPrefix, err := t.StringParam("prefix"); err == nil {
-		prefix, _ = resolver.ResolveStringParam(rawPrefix, ctx, infra_outputs)
+		prefix, _ = resolver.ResolveStringParam(rawPrefix, ctx, infra_outputs, r)
 	}
 
 	if key == "" && prefix == "" {

@@ -11,7 +11,7 @@ import (
 
 var placeholderRE = regexp.MustCompile(`\$\{([^}]+)\}`)
 
-func ResolveString(s string, ctx *structures.Context, infra_outputs *map[string]map[string]string) (string, error) {
+func ResolveString(s string, ctx *structures.Context, infra_outputs *map[string]map[string]string, r *structures.RunInfo) (string, error) {
 	var e error
 	result := placeholderRE.ReplaceAllStringFunc(s, func(m string) string {
 		key := strings.TrimSpace(m[2 : len(m)-1])
@@ -33,6 +33,14 @@ func ResolveString(s string, ctx *structures.Context, infra_outputs *map[string]
 			{
 				return os.Getenv(parts[1])
 			}
+		case "param":
+			if r != nil && r.Params != nil {
+				if val, ok := r.Params[parts[1]]; ok {
+					return val
+				}
+			}
+			e = fmt.Errorf("Unknown parameter: %s", parts[1])
+			return "ERROR"
 		}
 
 		e = fmt.Errorf("Invalid Reference: %s", s)
@@ -46,20 +54,20 @@ func ResolveString(s string, ctx *structures.Context, infra_outputs *map[string]
 	return result, nil
 }
 
-func ResolveStringParam(v string, ctx *structures.Context, infra *map[string]map[string]string) (string, error) {
-	v, err := ResolveString(v, ctx, infra)
+func ResolveStringParam(v string, ctx *structures.Context, infra *map[string]map[string]string, r *structures.RunInfo) (string, error) {
+	v, err := ResolveString(v, ctx, infra, r)
 	return v, err
 }
 
-func ResolveAny(v any, ctx *structures.Context, infra *map[string]map[string]string) (any, error) {
+func ResolveAny(v any, ctx *structures.Context, infra *map[string]map[string]string, r *structures.RunInfo) (any, error) {
 	switch typed := v.(type) {
 	case string:
-		return ResolveString(typed, ctx, infra)
+		return ResolveString(typed, ctx, infra, r)
 
 	case map[string]any:
 		out := make(map[string]any, len(typed))
 		for k, val := range typed {
-			rv, err := ResolveAny(val, ctx, infra)
+			rv, err := ResolveAny(val, ctx, infra, r)
 			if err != nil {
 				return nil, err
 			}
@@ -69,7 +77,7 @@ func ResolveAny(v any, ctx *structures.Context, infra *map[string]map[string]str
 	case []any:
 		out := make([]any, len(typed))
 		for i, val := range typed {
-			rv, err := ResolveAny(val, ctx, infra)
+			rv, err := ResolveAny(val, ctx, infra, r)
 			if err != nil {
 				return nil, err
 			}

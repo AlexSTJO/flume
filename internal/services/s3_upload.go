@@ -48,7 +48,7 @@ func (s S3UploadService) Run(t structures.Task, n string, ctx *structures.Contex
 	if err != nil {
 		return err
 	}
-	bucket, err := resolver.ResolveStringParam(raw_bucket, ctx, infra_outputs)
+	bucket, err := resolver.ResolveStringParam(raw_bucket, ctx, infra_outputs, r)
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func (s S3UploadService) Run(t structures.Task, n string, ctx *structures.Contex
 	if err != nil {
 		return err
 	}
-	source, err := resolver.ResolveStringParam(raw_source, ctx, infra_outputs)
+	source, err := resolver.ResolveStringParam(raw_source, ctx, infra_outputs, r)
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func (s S3UploadService) Run(t structures.Task, n string, ctx *structures.Contex
 	if err != nil {
 		return err
 	}
-	prefix, err := resolver.ResolveStringParam(raw_prefix, ctx, infra_outputs)
+	prefix, err := resolver.ResolveStringParam(raw_prefix, ctx, infra_outputs, r)
 	if err != nil {
 		return err
 	}

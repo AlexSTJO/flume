@@ -32,7 +32,7 @@ func (s HttpRequest) Run(t structures.Task, n string, ctx *structures.Context, i
 	if err != nil {
 		return err
 	}
-	url, err := resolver.ResolveStringParam(rawUrl, ctx, infra_outputs)
+	url, err := resolver.ResolveStringParam(rawUrl, ctx, infra_outputs, r)
 	if err != nil {
 		return fmt.Errorf("resolving url: %w", err)
 	}
@@ -41,7 +41,7 @@ func (s HttpRequest) Run(t structures.Task, n string, ctx *structures.Context, i
 	if err != nil {
 		return err
 	}
-	method, err := resolver.ResolveStringParam(rawMethod, ctx, infra_outputs)
+	method, err := resolver.ResolveStringParam(rawMethod, ctx, infra_outputs, r)
 	if err != nil {
 		return fmt.Errorf("resolving url: %w", err)
 	}
@@ -50,7 +50,7 @@ func (s HttpRequest) Run(t structures.Task, n string, ctx *structures.Context, i
 	if err != nil {
 		return err
 	}
-	body, err := resolver.ResolveStringParam(rawBody, ctx, infra_outputs)
+	body, err := resolver.ResolveStringParam(rawBody, ctx, infra_outputs, r)
 	if err != nil {
 		return fmt.Errorf("resolving body: %w", err)
 	}
@@ -80,7 +80,7 @@ func (s HttpRequest) Run(t structures.Task, n string, ctx *structures.Context, i
 		return fmt.Errorf("header parameters need to be a map")
 	}
 
-	res_headers, err := resolver.ResolveAny(headersRaw, ctx, infra_outputs)
+	res_headers, err := resolver.ResolveAny(headersRaw, ctx, infra_outputs, r)
 	if err != nil {
 		return fmt.Errorf("resolving headers: %w", err)
 	}

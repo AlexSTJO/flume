@@ -57,7 +57,7 @@ func (s EcrUploadService) Run(t structures.Task, n string, ctx *structures.Conte
 	if err != nil {
 		return err
 	}
-	local_image, err := resolver.ResolveStringParam(raw_local_image, ctx, infra_outputs)
+	local_image, err := resolver.ResolveStringParam(raw_local_image, ctx, infra_outputs, r)
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func (s EcrUploadService) Run(t structures.Task, n string, ctx *structures.Conte
 	if err != nil {
 		return err
 	}
-	registry, err := resolver.ResolveStringParam(raw_registry, ctx, infra_outputs)
+	registry, err := resolver.ResolveStringParam(raw_registry, ctx, infra_outputs, r)
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func (s EcrUploadService) Run(t structures.Task, n string, ctx *structures.Conte
 	if err != nil {
 		return err
 	}
-	tag, err := resolver.ResolveStringParam(raw_tag, ctx, infra_outputs)
+	tag, err := resolver.ResolveStringParam(raw_tag, ctx, infra_outputs, r)
 	if err != nil {
 		return err
 	}

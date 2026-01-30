@@ -48,13 +48,13 @@ func (s SSMService) Run(t structures.Task, n string, ctx *structures.Context, in
 	if err != nil {
 		return err
 	}
-	instance_id, err := resolver.ResolveStringParam(raw_instance, ctx, infra_outputs)
+	instance_id, err := resolver.ResolveStringParam(raw_instance, ctx, infra_outputs, r)
 	if err != nil {
 		return err
 	}
 
 	raw_commands := t.Parameters["commands"]
-	res_commands, err := resolver.ResolveAny(raw_commands, ctx, infra_outputs)
+	res_commands, err := resolver.ResolveAny(raw_commands, ctx, infra_outputs, r)
 	if err != nil {
 		return err
 	}

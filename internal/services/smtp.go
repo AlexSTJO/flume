@@ -33,7 +33,7 @@ func (s EmailService) Run(t structures.Task, n string, ctx *structures.Context, 
 	if err != nil {
 		return err
 	}
-	username, err := resolver.ResolveStringParam(raw_username, ctx, infra_outputs)
+	username, err := resolver.ResolveStringParam(raw_username, ctx, infra_outputs, r)
 	if err != nil {
 		return err
 	}
@@ -42,7 +42,7 @@ func (s EmailService) Run(t structures.Task, n string, ctx *structures.Context, 
 	if err != nil {
 		return err
 	}
-	password, err := resolver.ResolveStringParam(raw_password, ctx, infra_outputs)
+	password, err := resolver.ResolveStringParam(raw_password, ctx, infra_outputs, r)
 	if err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ func (s EmailService) Run(t structures.Task, n string, ctx *structures.Context, 
 	if err != nil {
 		return err
 	}
-	host, err := resolver.ResolveStringParam(raw_host, ctx, infra_outputs)
+	host, err := resolver.ResolveStringParam(raw_host, ctx, infra_outputs, r)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func (s EmailService) Run(t structures.Task, n string, ctx *structures.Context, 
 	if err != nil {
 		return err
 	}
-	subject, err := resolver.ResolveStringParam(raw_subject, ctx, infra_outputs)
+	subject, err := resolver.ResolveStringParam(raw_subject, ctx, infra_outputs, r)
 	if err != nil {
 		return err
 	}
@@ -69,7 +69,7 @@ func (s EmailService) Run(t structures.Task, n string, ctx *structures.Context, 
 	if err != nil {
 		return err
 	}
-	body, err := resolver.ResolveStringParam(raw_body, ctx, infra_outputs)
+	body, err := resolver.ResolveStringParam(raw_body, ctx, infra_outputs, r)
 	if err != nil {
 		return err
 	}
@@ -78,7 +78,7 @@ func (s EmailService) Run(t structures.Task, n string, ctx *structures.Context, 
 	if err != nil {
 		return err
 	}
-	recipient, err := resolver.ResolveStringParam(raw_recipient, ctx, infra_outputs)
+	recipient, err := resolver.ResolveStringParam(raw_recipient, ctx, infra_outputs, r)
 	if err != nil {
 		return err
 	}

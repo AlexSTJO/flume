@@ -27,7 +27,7 @@ func (s ShellService) Run(t structures.Task, n string, ctx *structures.Context, 
 	if err != nil {
 		return err
 	}
-	command, err := resolver.ResolveStringParam(raw_command, ctx, infra_outputs)
+	command, err := resolver.ResolveStringParam(raw_command, ctx, infra_outputs, r)
 	if err != nil {
 		rContext["success"] = "false"
 		ctx.SetEventValues(n, rContext)

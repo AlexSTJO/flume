@@ -31,7 +31,7 @@ func (s JsonWriterService) Run(t structures.Task, n string, ctx *structures.Cont
 	if err != nil {
 		return err
 	}
-	file_name, err := resolver.ResolveStringParam(u_file_name, ctx, infra_outputs)
+	file_name, err := resolver.ResolveStringParam(u_file_name, ctx, infra_outputs, r)
 	if err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ func (s JsonWriterService) Run(t structures.Task, n string, ctx *structures.Cont
 		payload[k] = v
 	}
 
-	resolved_payload, err := resolver.ResolveAny(payload, ctx, infra_outputs)
+	resolved_payload, err := resolver.ResolveAny(payload, ctx, infra_outputs, r)
 	if err != nil {
 		return fmt.Errorf("Error resolving data: %w", err)
 	}

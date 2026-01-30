@@ -25,6 +25,7 @@ type RunInfo struct {
 	Remote   bool
 	FileRef  string
 	S3       *RemotePipeline
+	Params   map[string]string
 }
 
 type RemotePipeline struct {
@@ -32,7 +33,7 @@ type RemotePipeline struct {
 	Key    string
 }
 
-func GenerateRunInfo(fileRef string) (*RunInfo, error) {
+func GenerateRunInfo(fileRef string, params map[string]string) (*RunInfo, error) {
 	remote := false
 	pipeline := ""
 	var remote_pipeline RemotePipeline
@@ -63,6 +64,9 @@ func GenerateRunInfo(fileRef string) (*RunInfo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Couldnt make tmp run directory: %w", err)
 	}
+	if params == nil {
+		params = make(map[string]string)
+	}
 	return &RunInfo{
 		RunID:    run_id,
 		RunDir:   run_dir,
@@ -70,5 +74,6 @@ func GenerateRunInfo(fileRef string) (*RunInfo, error) {
 		Remote:   remote,
 		FileRef:  fileRef,
 		S3:       &remote_pipeline,
+		Params:   params,
 	}, nil
 }

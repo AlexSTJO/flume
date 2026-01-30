@@ -41,7 +41,7 @@ func (s CloudfrontInvalidateService) Run(t structures.Task, n string, ctx *struc
 	runCtx := make(map[string]string, 1)
 	defer ctx.SetEventValues(n, runCtx)
 	runCtx["success"] = "false"
-	raw_dist_id, err := resolver.ResolveAny(t.Parameters["dist_id"], ctx, infra_outputs)
+	raw_dist_id, err := resolver.ResolveAny(t.Parameters["dist_id"], ctx, infra_outputs, r)
 	if err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ func (s CloudfrontInvalidateService) Run(t structures.Task, n string, ctx *struc
 		return fmt.Errorf("Parameter 'dist_id' has to be a string")
 	}
 
-	raw_paths, err := resolver.ResolveAny(t.Parameters["paths"], ctx, infra_outputs)
+	raw_paths, err := resolver.ResolveAny(t.Parameters["paths"], ctx, infra_outputs, r)
 	if err != nil {
 		return err
 	}

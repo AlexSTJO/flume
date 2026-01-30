@@ -17,7 +17,8 @@ import (
 )
 
 type runRequest struct {
-	PipelineRef string `json:"pipeline_ref"`
+	PipelineRef string            `json:"pipeline_ref"`
+	Parameters  map[string]string `json:"parameters,omitempty"`
 }
 
 type RunResponse struct {
@@ -61,7 +62,7 @@ func runPipeline(w http.ResponseWriter, r *http.Request) {
 
 	var s3_client *s3.Client
 
-	run_info, err := structures.GenerateRunInfo(req.PipelineRef)
+	run_info, err := structures.GenerateRunInfo(req.PipelineRef, req.Parameters)
 	if err != nil {
 		http.Error(w, "Error Geerating Run Info: "+err.Error(), http.StatusBadRequest)
 		return

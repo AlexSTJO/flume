@@ -69,6 +69,7 @@ curl -X POST "http://localhost:8080/run" \
 - Docker image building
 - HTTP requests (GET, POST, PUT, DELETE, PATCH)
 - AWS: S3 upload/download, CloudFront invalidation, ECR push, SSM operations
+- Slack notifications
 - SMTP email notifications
 - JSON file writing
 - Modular service registry for custom extensions
@@ -184,6 +185,7 @@ Parameters are accessible in your pipeline using `${param:name}` syntax.
 | `ecr_upload` | Push images to ECR | `local_image`, `registry`, `tag` |
 | `cloudfront_invalidate` | Invalidate CloudFront cache | `dist_id`, `paths` |
 | `ssm` | AWS SSM operations | `instance_id`, `commands` |
+| `slack` | Send Slack notifications | `webhook_url`, `message` |
 | `smtp` | Send emails | (see service file) |
 | `json_writer` | Write JSON to file | (see service file) |
 
@@ -301,19 +303,19 @@ tasks:
           docker run -d --name flume -p 8080:8080 ${context:ecr_upload.remote_image}
 ```
 
-### HTTP Webhook Notification
+### Slack Notification
 
 ```yaml
 tasks:
   notify:
-    service: http_request
+    service: slack
     dependencies: ["deploy"]
     parameters:
-      url: "https://hooks.slack.com/services/xxx"
-      method: "POST"
-      body: '{"text": "Deployment complete"}'
-      headers:
-        Content-Type: "application/json"
+      webhook_url: "${env:SLACK_WEBHOOK_URL}"
+      message: "Deployment complete!"
+      channel: "#deployments"      # optional: override default channel
+      username: "Flume Bot"        # optional: override bot name
+      icon_emoji: ":rocket:"       # optional: override bot icon
 ```
 
 ### Parameterized Deployment
@@ -334,15 +336,12 @@ tasks:
         ./deploy.sh --env ${param:environment} --version ${param:version}
 
   notify:
-    service: http_request
+    service: slack
     dependencies: ["deploy"]
     run_if: "${param:environment} == production"
     parameters:
-      url: "https://hooks.slack.com/services/xxx"
-      method: "POST"
-      body: '{"text": "Deployed ${param:version} to production"}'
-      headers:
-        Content-Type: "application/json"
+      webhook_url: "${env:SLACK_WEBHOOK_URL}"
+      message: "Deployed ${param:version} to production"
 ```
 
 Trigger with:

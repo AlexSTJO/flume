@@ -188,6 +188,7 @@ Parameters are accessible in your pipeline using `${param:name}` syntax.
 | `slack` | Send Slack notifications | `webhook_url`, `message` |
 | `smtp` | Send emails | (see service file) |
 | `json_writer` | Write JSON to file | (see service file) |
+| `wait` | Pause execution for a duration | `duration` |
 
 ## Resolver Patterns
 
@@ -316,6 +317,31 @@ tasks:
       channel: "#deployments"      # optional: override default channel
       username: "Flume Bot"        # optional: override bot name
       icon_emoji: ":rocket:"       # optional: override bot icon
+```
+
+### Wait Between Tasks
+
+Add delays between tasks for rate limiting or eventual consistency:
+
+```yaml
+tasks:
+  deploy:
+    service: shell
+    parameters:
+      command: "./deploy.sh"
+
+  wait_for_propagation:
+    service: wait
+    dependencies: ["deploy"]
+    parameters:
+      duration: "30s"  # supports: ms, s, m, h (e.g., 500ms, 5s, 1m, 1h)
+
+  health_check:
+    service: http_request
+    dependencies: ["wait_for_propagation"]
+    parameters:
+      url: "https://api.example.com/health"
+      method: "GET"
 ```
 
 ### Parameterized Deployment

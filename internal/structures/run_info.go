@@ -19,13 +19,14 @@ func newID() string {
 }
 
 type RunInfo struct {
-	RunID    string
-	RunDir   string
-	Pipeline string
-	Remote   bool
-	FileRef  string
-	S3       *RemotePipeline
-	Params   map[string]string
+	RunID        string
+	RunDir       string
+	Pipeline     string
+	Remote       bool
+	FileRef      string
+	S3           *RemotePipeline
+	Params       map[string]string
+	SecretsCache map[string]string
 }
 
 type RemotePipeline struct {
@@ -68,12 +69,13 @@ func GenerateRunInfo(fileRef string, params map[string]string) (*RunInfo, error)
 		params = make(map[string]string)
 	}
 	return &RunInfo{
-		RunID:    run_id,
-		RunDir:   run_dir,
-		Pipeline: pipeline,
-		Remote:   remote,
-		FileRef:  fileRef,
-		S3:       &remote_pipeline,
-		Params:   params,
+		RunID:        run_id,
+		RunDir:       run_dir,
+		Pipeline:     pipeline,
+		Remote:       remote,
+		FileRef:      fileRef,
+		S3:           &remote_pipeline,
+		Params:       params,
+		SecretsCache: make(map[string]string),
 	}, nil
 }

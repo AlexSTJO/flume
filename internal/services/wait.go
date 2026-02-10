@@ -38,7 +38,7 @@ func (s WaitService) Run(t structures.Task, n string, ctx *structures.Context, i
 		return fmt.Errorf("invalid duration %q: %w (use format like 5s, 1m, 500ms)", durationStr, err)
 	}
 
-	l.Info(fmt.Sprintf("Waiting for %s", duration))
+	l.InfoLogger(fmt.Sprintf("Waiting for %s", duration))
 	time.Sleep(duration)
 
 	runCtx["success"] = "true"

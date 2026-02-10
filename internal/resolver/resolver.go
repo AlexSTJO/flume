@@ -1,13 +1,36 @@
 package resolver
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/AlexSTJO/flume/internal/structures"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 )
+
+var (
+	smClient     *secretsmanager.Client
+	smClientOnce sync.Once
+	smClientErr  error
+)
+
+func getSecretsManagerClient() (*secretsmanager.Client, error) {
+	smClientOnce.Do(func() {
+		cfg, err := config.LoadDefaultConfig(context.Background())
+		if err != nil {
+			smClientErr = fmt.Errorf("loading aws config: %w", err)
+			return
+		}
+		smClient = secretsmanager.NewFromConfig(cfg)
+	})
+	return smClient, smClientErr
+}
 
 var placeholderRE = regexp.MustCompile(`\$\{([^}]+)\}`)
 
@@ -41,6 +64,46 @@ func ResolveString(s string, ctx *structures.Context, infra_outputs *map[string]
 			}
 			e = fmt.Errorf("Unknown parameter: %s", parts[1])
 			return "ERROR"
+		case "secret":
+			secretParts := strings.SplitN(parts[1], ".", 2)
+			if len(secretParts) != 2 {
+				e = fmt.Errorf("invalid secret reference: %s (expected secret:<provider>.<name>)", key)
+				return "ERROR"
+			}
+			provider := secretParts[0]
+			secretName := secretParts[1]
+
+			switch provider {
+			case "sm":
+				if r != nil && r.SecretsCache != nil {
+					if val, ok := r.SecretsCache[secretName]; ok {
+						return val
+					}
+				}
+
+				client, err := getSecretsManagerClient()
+				if err != nil {
+					e = fmt.Errorf("failed to get Secrets Manager client: %w", err)
+					return "ERROR"
+				}
+
+				out, err := client.GetSecretValue(context.Background(), &secretsmanager.GetSecretValueInput{
+					SecretId: aws.String(secretName),
+				})
+				if err != nil {
+					e = fmt.Errorf("failed to get secret %s: %w", secretName, err)
+					return "ERROR"
+				}
+
+				val := aws.ToString(out.SecretString)
+				if r != nil && r.SecretsCache != nil {
+					r.SecretsCache[secretName] = val
+				}
+				return val
+			default:
+				e = fmt.Errorf("unknown secret provider: %s", provider)
+				return "ERROR"
+			}
 		}
 
 		e = fmt.Errorf("Invalid Reference: %s", s)

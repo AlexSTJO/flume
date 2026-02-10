@@ -53,6 +53,7 @@ curl -X POST "http://localhost:8080/run" \
 - Parallel task workers with dependency resolution
 - Dynamic resolver engine for variable substitution
 - Runtime pipeline parameters via API
+- Secrets management via AWS Secrets Manager
 - Conditional task execution (`run_if`, `skip_if`)
 - Task retry with configurable attempts and delay
 - Task timeout support
@@ -200,6 +201,7 @@ Use these patterns in task parameters to reference dynamic values:
 | `${infra:terraform.<output>}` | Terraform output value | `${infra:terraform.bucket_name}` |
 | `${env:<VAR>}` | Environment variable | `${env:AWS_REGION}` |
 | `${param:<name>}` | Runtime parameter from API | `${param:environment}` |
+| `${secret:sm.<name>}` | Secret from AWS Secrets Manager | `${secret:sm.myapp/db-password}` |
 | `${timestamp}` | Execution timestamp | `${timestamp}` |
 
 ## Examples
@@ -380,6 +382,34 @@ curl -X POST "http://localhost:8080/run" \
   }'
 ```
 
+### Using Secrets from AWS Secrets Manager
+
+Securely access secrets stored in AWS Secrets Manager:
+
+```yaml
+name: "deploy-with-secrets"
+trigger:
+  type: "api"
+
+tasks:
+  deploy:
+    service: shell
+    parameters:
+      command: |
+        export DB_HOST="${secret:sm.myapp/prod/db-host}"
+        export DB_PASSWORD="${secret:sm.myapp/prod/db-password}"
+        ./deploy.sh
+
+  notify:
+    service: slack
+    dependencies: ["deploy"]
+    parameters:
+      webhook_url: "${secret:sm.myapp/slack-webhook}"
+      message: "Deployment complete!"
+```
+
+Secrets are cached per pipeline run to minimize API calls.
+
 ## Creating Custom Services
 
 1. Create a file in `internal/services/`
@@ -428,7 +458,7 @@ func init() {
 - [x] Task timeouts
 - [x] Conditional execution
 - [x] Pipeline parameters
-- [ ] Secrets management
+- [x] Secrets management (AWS Secrets Manager)
 - [ ] Plugin system
 
 ## License

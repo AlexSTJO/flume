@@ -190,6 +190,7 @@ Parameters are accessible in your pipeline using `${param:name}` syntax.
 | `smtp` | Send emails | (see service file) |
 | `json_writer` | Write JSON to file | (see service file) |
 | `wait` | Pause execution for a duration | `duration` |
+| `test_runner` | Run test suites with structured results | `command` |
 
 ## Resolver Patterns
 
@@ -381,6 +382,34 @@ curl -X POST "http://localhost:8080/run" \
     "parameters": {"environment": "production", "version": "1.5.0"}
   }'
 ```
+
+### Test Runner with Failure Notification
+
+Run tests and notify on failure using structured context outputs:
+
+```yaml
+tasks:
+  clone_repo:
+    service: git
+    parameters:
+      repo_url: "git@github.com:user/my-app.git"
+
+  run_tests:
+    service: test_runner
+    dependencies: ["clone_repo"]
+    parameters:
+      command: "cd ${context:clone_repo.repo_folder} && go test ./... -v"
+
+  notify_on_failure:
+    service: slack
+    dependencies: ["run_tests"]
+    run_if: "${context:run_tests.success} == false"
+    parameters:
+      webhook_url: "${env:SLACK_WEBHOOK_URL}"
+      message: "Tests failed: ${context:run_tests.failed}/${context:run_tests.total}. Exit code: ${context:run_tests.exit_code}"
+```
+
+The `test_runner` service captures test output to a file and parses pass/fail counts from Go test, pytest, and Jest output formats. Context outputs: `success`, `exit_code`, `passed`, `failed`, `total`, `output_path`.
 
 ### Using Secrets from AWS Secrets Manager
 
